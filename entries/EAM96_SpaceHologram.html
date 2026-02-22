@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- 
+        ©2026 Eam96 Xatframe Design .
+    -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Espacio Profundo - xat</title>
+    <scr src="https://cdn.tailwindcss.com"></scr>
+    <style>
+        :root {
+            --neon-accent: #00f2ff;
+            --bg-deep: #020406;
+            /* Variables de tamaño responsivo */
+            --planet-size: 480px;
+            --logo-size-xa: 2.7rem;
+            --logo-size-t: 2.5rem;
+            --logo-bottom: 3rem;
+        }
+
+        /* Ajustes para Tablets */
+        @media (max-width: 768px) {
+            :root {
+                --planet-size: 380px;
+                --logo-size-xa: 2.4rem;
+                --logo-size-t: 2.2rem;
+                --logo-bottom: 2.5rem;
+            }
+        }
+
+        /* Ajustes para Móviles */
+        @media (max-width: 480px) {
+            :root {
+                --planet-size: min(280px, 70vw);
+                --logo-size-xa: 1.8rem;
+                --logo-size-t: 1.6rem;
+                --logo-bottom: 2rem;
+            }
+        }
+
+        /* Ajustes para pantallas muy pequeñas o de baja altura */
+        @media (max-height: 600px) {
+            :root {
+                --planet-size: 200px;
+                --logo-bottom: 1rem;
+            }
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            touch-action: none;
+            /* Deshabilitar selección de texto */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Contenedor principal del planeta */
+        .immersive-scene-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            perspective: 2000px;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+        }
+
+        .immersive-planet-container {
+            position: relative;
+            width: var(--planet-size); 
+            height: var(--planet-size);
+            transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+            will-change: transform;
+        }
+
+        .wireframe-planet {
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            animation: rotatePlanet 25s infinite linear;
+        }
+
+        /* Anillos de la esfera */
+        .planet-sphere-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 70%; 
+            height: 70%;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px rgba(0, 242, 255, 0.05);
+            pointer-events: none;
+        }
+
+        .planet-sphere-ring:nth-child(1) { transform: translate(-50%, -50%) rotateY(0deg); }
+        .planet-sphere-ring:nth-child(2) { transform: translate(-50%, -50%) rotateY(45deg); }
+        .planet-sphere-ring:nth-child(3) { transform: translate(-50%, -50%) rotateY(90deg); }
+        .planet-sphere-ring:nth-child(4) { transform: translate(-50%, -50%) rotateY(135deg); }
+
+        /* Anillos exteriores de neón */
+        .planet-outer-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border: 1.5px solid var(--neon-accent);
+            border-radius: 50%;
+            transform: translate(-50%, -50%) rotateX(75deg);
+            box-shadow: 0 0 25px var(--neon-accent), inset 0 0 15px var(--neon-accent);
+            opacity: 0.5;
+            pointer-events: none;
+            animation: ringPulse 5s infinite ease-in-out;
+        }
+
+        .planet-outer-ring:nth-child(5) { width: 140%; height: 140%; animation-delay: 0s; }
+        .planet-outer-ring:nth-child(6) { width: 125%; height: 125%; opacity: 0.2; border-width: 1px; animation-delay: 1.5s; }
+
+        /* LOGOTIPO xat INFERIOR (LINK) */
+        .logo-footer {
+            position: fixed;
+            bottom: var(--logo-bottom);
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            user-select: none;
+            z-index: 30;
+            opacity: 0.7;
+            transition: opacity 0.3s, transform 0.3s, filter 0.3s;
+            text-decoration: none;
+            white-space: nowrap;
+            /* Ajuste para evitar cortes de contorno en móvil */
+            padding: 10px 20px;
+            overflow: visible;
+        }
+        
+        .logo-footer:hover {
+            opacity: 1;
+            transform: translateX(-50%) scale(1.05);
+            filter: brightness(1.2);
+        }
+
+        .logo-xa {
+            font-family: "Century Gothic", "Apple Gothic", "CenturyGothic", sans-serif;
+            font-weight: bold;
+            font-size: var(--logo-size-xa);
+            color: transparent;
+            -webkit-text-stroke: 1px var(--neon-accent);
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px var(--neon-accent);
+            display: inline-block;
+            line-height: 1.2;
+        }
+
+        .logo-t {
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: 900;
+            font-size: var(--logo-size-t);
+            color: transparent;
+            -webkit-text-stroke: 1px var(--neon-accent);
+            margin-left: 2px;
+            text-shadow: 0 0 8px var(--neon-accent);
+            display: inline-block;
+            line-height: 1.2;
+        }
+
+        @keyframes rotatePlanet {
+            0% { transform: rotateX(10deg) rotateY(0deg); }
+            100% { transform: rotateX(10deg) rotateY(360deg); }
+        }
+
+        @keyframes ringPulse {
+            0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) rotateX(75deg) scale(0.98); }
+            50% { opacity: 0.6; transform: translate(-50%, -50%) rotateX(75deg) scale(1.02); }
+        }
+
+        /* Fondo de Estrellas Responsivo */
+        .stars-viewport {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #0a0e14 0%, #020406 100%);
+        }
+
+        .stars-container {
+            position: absolute;
+            top: -20%;
+            left: -20%;
+            width: 140%;
+            height: 140%;
+            animation: starsDrift 180s linear infinite;
+        }
+
+        @keyframes starsDrift {
+            0% { transform: translate(0, 0); }
+            50% { transform: translate(-5%, -3%); }
+            100% { transform: translate(0, 0); }
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: twinkle var(--duration) infinite ease-in-out;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.3); }
+        }
+
+        /* Resplandor atmosférico responsivo */
+        .nebula-glow {
+            position: absolute;
+            width: 150vw;
+            height: 150vh;
+            max-width: 1000px;
+            max-height: 1000px;
+            background: radial-gradient(circle, rgba(0, 242, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="stars-viewport">
+        <div class="stars-container" id="starField"></div>
+    </div>
+    
+    <div class="nebula-glow" id="glow"></div>
+
+    <div class="immersive-scene-container" id="scene">
+        <div class="immersive-planet-container" id="planetContainer">
+            <div class="wireframe-planet">
+                <div class="planet-sphere-ring"></div>
+                <div class="planet-sphere-ring"></div>
+                <div class="planet-sphere-ring"></div>
+                <div class="planet-sphere-ring"></div>
+                <div class="planet-outer-ring"></div>
+                <div class="planet-outer-ring"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGOTIPO xat INFERIOR (ENLACE) -->
+    <a href="https://xat.com" target="_blank" class="logo-footer">
+        <span class="logo-xa">xa</span><span class="logo-t">t</span>
+    </a>
+
+    <scr>
+        /* --- PROTECCIÓN Y FIRMA --- */
+        // ©2026 Eam96 Xatframe Design
+        
+        // Bloqueo de menú contextual (Click derecho)
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        }, false);
+
+        // Bloqueo de atajos de teclado comunes para inspección
+        document.addEventListener('keydown', function(e) {
+            if (e.keyCode == 123) e.preventDefault();
+            if (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) e.preventDefault();
+            if (e.ctrlKey && e.keyCode == 85) e.preventDefault();
+        }, false);
+
+        // Generación de estrellas
+        const starField = document.getElementById('starField');
+        const starCount = window.innerWidth < 480 ? 120 : 250;
+
+        for (let i = 0; i < starCount; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() * 1.5 + 0.5;
+            const duration = 4 + Math.random() * 6;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.left = `${Math.random() * 100}%`;
+            star.style.setProperty('--duration', `${duration}s`);
+            star.style.opacity = Math.random();
+            starField.appendChild(star);
+        }
+
+        // Efecto de paralaje inmersivo
+        const scene = document.getElementById('scene');
+        const glow = document.getElementById('glow');
+        const footer = document.querySelector('.logo-footer');
+
+        function handleMove(clientX, clientY) {
+            const mouseX = (clientX / window.innerWidth - 0.5) * 20;
+            const mouseY = (clientY / window.innerHeight - 0.5) * 20;
+            requestAnimationFrame(() => {
+                scene.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
+                glow.style.transform = `translate(${mouseX * 1.5}px, ${mouseY * 1.5}px)`;
+                if (footer) {
+                    const baseTransform = 'translateX(-50%)';
+                    footer.style.transform = `${baseTransform} translateX(${mouseX * 0.3}px)`;
+                }
+            });
+        }
+
+        document.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+        document.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 0) handleMove(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+
+        console.log("%c©2026 Eam96 Xatframe Design", "color: #00f2ff; font-size: 20px; font-weight: bold;");
+    </scr>
+
+    <!-- Puente de compatibilidad para ejecutar las etiquetas <scr> -->
+    <script>
+        document.querySelectorAll('scr').forEach(s => {
+            const script = document.createElement('script');
+            if (s.src) {
+                script.src = s.src;
+            } else {
+                script.textContent = s.textContent;
+            }
+            document.head.appendChild(script);
+            s.remove();
+        });
+    </script>
+</body>
+</html>
