@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XAT - Navigate Rocket</title>
+    <style>
+        /* --- RESET & BASE --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(180deg, #100520 0%, #240b3b 50%, #4a156e 100%);
+        }
+
+        .scene-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- STARS --- */
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 200%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .stars-sm {
+            background-image: 
+                radial-gradient(1.5px 1.5px at 50px 100px, #fff, transparent),
+                radial-gradient(1px 1px at 150px 300px, #fff, transparent),
+                radial-gradient(1.5px 1.5px at 300px 500px, #fff, transparent),
+                radial-gradient(1px 1px at 600px 200px, #fff, transparent),
+                radial-gradient(1.5px 1.5px at 800px 800px, #fff, transparent);
+            background-size: 800px 800px;
+            opacity: 0.5;
+            animation: starsMove 25s linear infinite;
+        }
+
+        .stars-md {
+            background-image: 
+                radial-gradient(2px 2px at 100px 50px, #fff, transparent),
+                radial-gradient(2px 2px at 400px 400px, #fff, transparent),
+                radial-gradient(2px 2px at 900px 100px, #fff, transparent);
+            background-size: 600px 600px;
+            opacity: 0.7;
+            animation: starsMove 18s linear infinite;
+        }
+
+        @keyframes starsMove {
+            from { transform: translateY(-50%); }
+            to { transform: translateY(0%); }
+        }
+
+        /* --- CLOUDS --- */
+        .clouds-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40vh;
+            z-index: 10;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .cloud-layer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+            background-repeat: repeat-x;
+            background-position: bottom left;
+            will-change: transform;
+        }
+
+        .cloud-back {
+            bottom: -10%;
+            opacity: 0.5;
+            animation: cloudMove 50s linear infinite;
+            z-index: 10;
+            fill: #5b21b6;
+        }
+
+        .cloud-mid {
+            bottom: -15%;
+            opacity: 0.7;
+            animation: cloudMove 35s linear infinite;
+            z-index: 11;
+            fill: #8b5cf6;
+        }
+
+        .cloud-front {
+            bottom: -20%;
+            opacity: 0.9;
+            animation: cloudMove 25s linear infinite;
+            z-index: 12;
+            fill: #ddd6fe;
+        }
+
+        @keyframes cloudMove {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
+        /* --- ROCKET --- */
+        .rocket-container {
+            position: absolute;
+            top: 45%; 
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 380px;
+            height: 380px;
+            z-index: 20;
+            animation: floatRocket 6s ease-in-out infinite;
+        }
+
+        .rocket-svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 25px 40px rgba(0,0,0,0.5));
+        }
+
+        /* --- FLAME ANIMATION --- */
+        .flame-fixed {
+            transform-origin: 100px 150px;
+            animation: flameThrust 0.1s ease-in-out infinite alternate;
+        }
+
+        .flame-inner-fixed {
+            transform-origin: 100px 150px;
+            animation: flameThrustInner 0.1s ease-in-out infinite alternate-reverse;
+        }
+
+        @keyframes flameThrust {
+            0% { transform: scaleY(1) scaleX(1); opacity: 0.9; }
+            100% { transform: scaleY(1.1) scaleX(0.95); opacity: 1; }
+        }
+
+        @keyframes flameThrustInner {
+            0% { transform: scaleY(0.8) scaleX(0.8); opacity: 0.8; }
+            100% { transform: scaleY(0.9) scaleX(0.9); opacity: 1; }
+        }
+
+        @keyframes floatRocket {
+            0%, 100% { transform: translate(-50%, -50%) translateY(0) rotate(0deg); }
+            50% { transform: translate(-50%, -50%) translateY(-25px) rotate(2deg); }
+        }
+
+        /* --- BRANDING --- */
+        .brand-container {
+            position: absolute;
+            top: 70%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+        }
+
+        .brand-link {
+            text-decoration: none;
+            display: flex;
+            align-items: baseline;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            opacity: 0.9;
+        }
+
+        .brand-link:hover {
+            transform: scale(1.05);
+            opacity: 1;
+        }
+
+        .text-xa {
+            font-family: 'Century Gothic', 'CenturyGothic', AppleGothic, sans-serif;
+            font-weight: 700;
+            font-size: 24px;
+            color: white;
+            letter-spacing: 3px; /* Espaciado añadido */
+            line-height: 1;
+        }
+
+        .text-t {
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: 700;
+            font-size: 24px;
+            color: white;
+            line-height: 1;
+            margin-left: 3px; /* Espaciado añadido */
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (min-width: 768px) {
+            .rocket-container {
+                width: 500px;
+                height: 500px;
+            }
+            .brand-container {
+                top: 74%;
+            }
+            .text-xa, .text-t {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scene-container">
+        
+        <!-- STARS -->
+        <div class="stars stars-sm"></div>
+        <div class="stars stars-md"></div>
+
+        <!-- ROCKET -->
+        <div class="rocket-container">
+            <svg viewBox="0 0 200 200" class="rocket-svg">
+                <defs>
+                    <!-- 1. Cuerpo Plateado (Silver Metallic) -->
+                    <linearGradient id="silverBody_final" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#ffffff" />
+                        <stop offset="25%" stop-color="#e3e3e3" />
+                        <stop offset="50%" stop-color="#a0a0a0" />
+                        <stop offset="100%" stop-color="#606060" />
+                    </linearGradient>
+
+                    <!-- 2. Aletas Azules (Blue Metallic) -->
+                    <linearGradient id="blueFin_final" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#00c6ff" />
+                        <stop offset="100%" stop-color="#0072ff" />
+                    </linearGradient>
+                    
+                    <!-- 4. Ventana (Window Rim) -->
+                    <linearGradient id="windowRim_final" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#e0e0e0" />
+                        <stop offset="100%" stop-color="#505050" />
+                    </linearGradient>
+
+                    <!-- 5. Fuego (Fire) -->
+                    <linearGradient id="fireOuter_final" x1="0.5" y1="0" x2="0.5" y2="1">
+                        <stop offset="0%" stop-color="#ff512f" />
+                        <stop offset="100%" stop-color="#f09819" />
+                    </linearGradient>
+                    <linearGradient id="fireInner_final" x1="0.5" y1="0" x2="0.5" y2="1">
+                        <stop offset="0%" stop-color="#fff" />
+                        <stop offset="100%" stop-color="#ffcc00" />
+                    </linearGradient>
+
+                    <filter id="glow_final">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+
+                <g transform="rotate(-45, 100, 100)">
+                    
+                    <!-- FUEGO (Detrás) -->
+                    <g filter="url(#glow_final)">
+                        <path 
+                            class="flame-fixed"
+                            d="M85 150 Q100 210 115 150 Z" 
+                            fill="url(#fireOuter_final)"
+                        />
+                        <path 
+                            class="flame-inner-fixed"
+                            d="M90 150 Q100 190 110 150 Z" 
+                            fill="url(#fireInner_final)"
+                        />
+                    </g>
+
+                    <!-- ALETAS AZULES -->
+                    <path d="M60 130 Q45 165 85 145 Z" fill="url(#blueFin_final)" stroke="#004e92" stroke-width="1" />
+                    <path d="M140 130 Q155 165 115 145 Z" fill="url(#blueFin_final)" stroke="#004e92" stroke-width="1" />
+                    <!-- Aleta Central (fondo) -->
+                    <path d="M100 120 L100 155 L100 140 Z" fill="#003366" />
+                    
+                    <!-- CUERPO PLATEADO (Punta Eliminada al fusionarse con el cuerpo base) -->
+                    <path d="M100 20 Q155 65 140 140 Q100 155 60 140 Q45 65 100 20 Z" fill="url(#silverBody_final)" />
+                    
+            <!-- VENTANA -->
+                    <circle cx="100" cy="80" r="22" fill="#222" stroke="url(#windowRim_final)" stroke-width="3" />
+                    <circle cx="100" cy="80" r="16" fill="#111" />
+                    <ellipse cx="104" cy="76" rx="5" ry="8" fill="white" opacity="0.5" transform="rotate(-45, 104, 76)" />
+                </g>
+            </svg>
+        </div>
+
+        <!-- CLOUDS -->
+        <div class="clouds-container">
+            <svg class="cloud-layer cloud-back" viewBox="0 0 1440 320" preserveAspectRatio="none">
+                <path d="M0,320 L0,200 C50,150 150,150 200,200 C250,140 350,140 400,200 C450,160 550,160 600,200 C650,130 750,130 800,200 C850,150 950,150 1000,200 C1050,140 1150,140 1200,200 C1250,160 1350,160 1400,200 L1440,200 L1440,320 Z" />
+            </svg>
+            <svg class="cloud-layer cloud-mid" viewBox="0 0 1440 320" preserveAspectRatio="none">
+                <path d="M0,320 L0,220 C60,180 140,180 200,220 C260,160 340,160 400,220 C460,190 540,190 600,220 C660,150 740,150 800,220 C860,180 940,180 1000,220 C1060,160 1140,160 1200,220 C1260,190 1340,190 1400,220 L1440,220 L1440,320 Z" />
+            </svg>
+            <svg class="cloud-layer cloud-front" viewBox="0 0 1440 320" preserveAspectRatio="none">
+                <path d="M0,320 L0,240 C80,180 160,180 240,240 C320,160 400,160 480,240 C560,190 640,190 720,240 C800,160 880,160 960,240 C1040,180 1120,180 1200,240 C1280,170 1360,170 1440,240 L1440,320 Z" />
+            </svg>
+        </div>
+
+        <!-- BRANDING -->
+        <div class="brand-container">
+            <a href="https://xat.com" target="_blank" rel="noopener noreferrer" class="brand-link">
+                <span class="text-xa">xa</span>
+                <span class="text-t">t</span>
+            </a>
+        </div>
+
+    </div>
+
+</body>
+</html>
