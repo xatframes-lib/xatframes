@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xat Grid</title>
+    <style>
+        /* ==========================================================================
+           VARIABLES Y CONFIGURACIÃ“N BASE
+           ========================================================================== */
+        :root {
+            --bg-color-dark: #020613; /* Fondo principal ultra oscuro */
+            --bg-color-light: #07143A; /* Azul profundo corporativo */
+            --electric-blue: #00D4FF; /* Acento neÃ³n/elÃ©ctrico */
+            --electric-blue-rgb: 0, 212, 255; /* Base RGB para opacidades dinÃ¡micas */
+            --vignette-color: #010206; /* Color para el sombreado de los bordes */
+            
+            --grid-size: 30px; /* TamaÃ±o de las celdas reducido (antes 60px) para mayor densidad */
+            --horizon-y: 65%; /* PosiciÃ³n vertical del horizonte (mÃ¡s bajo que antes) */
+        }
+
+        /* ==========================================================================
+           PALETAS DE COLORES (MODOS GLOBALES)
+           ========================================================================== */
+        body.theme-red {
+            --bg-color-dark: #0f0002;
+            --bg-color-light: #3a070a;
+            --electric-blue: #ff003c;
+            --electric-blue-rgb: 255, 0, 60;
+            --vignette-color: #050001;
+        }
+
+        body.theme-yellow {
+            --bg-color-dark: #0f0a00;
+            --bg-color-light: #3a2a07;
+            --electric-blue: #ffcc00;
+            --electric-blue-rgb: 255, 204, 0;
+            --vignette-color: #050300;
+        }
+
+        body.theme-green {
+            --bg-color-dark: #000f04;
+            --bg-color-light: #073a14;
+            --electric-blue: #00ff66;
+            --electric-blue-rgb: 0, 255, 102;
+            --vignette-color: #000501;
+        }
+
+        body.theme-purple {
+            --bg-color-dark: #0a000f;
+            --bg-color-light: #26073a;
+            --electric-blue: #b700ff;
+            --electric-blue-rgb: 183, 0, 255;
+            --vignette-color: #030005;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Evitar scroll */
+            background-color: var(--bg-color-dark);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #ffffff;
+            /* Deshabilita la selecciÃ³n de texto visualmente */
+            user-select: none;
+            -webkit-user-select: none;
+            transition: background-color 0.8s ease; /* TransiciÃ³n general de fondo */
+        }
+
+        /* ==========================================================================
+           CONTENEDOR CINEMATOGRÃFICO (Efecto Hover Global)
+           ========================================================================== */
+        .cinematic-scene {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            transform-origin: center var(--horizon-y);
+            transition: transform 3s cubic-bezier(0.25, 1, 0.5, 1); /* TransiciÃ³n ultra suave */
+            z-index: 1;
+        }
+
+        /* Efecto Hover solo activo en dispositivos con cursor preciso (no tÃ¡ctiles) */
+        @media (hover: hover) and (pointer: fine) {
+            body:hover .cinematic-scene {
+                transform: scale(1.03) translateY(1%);
+            }
+        }
+
+        /* ==========================================================================
+           FONDOS Y AMBIENTE (CIELO/ESPACIO)
+           ========================================================================== */
+        .sky-gradient {
+            position: absolute;
+            inset: 0;
+            /* El cielo ahora termina exactamente donde empieza el nuevo horizonte */
+            background: linear-gradient(180deg, var(--bg-color-dark) 0%, var(--bg-color-light) var(--horizon-y), var(--bg-color-dark) 100%);
+            z-index: 0;
+            transition: background 0.8s ease;
+        }
+
+        /* ViÃ±eta para oscurecer los bordes y enfocar el centro */
+        .vignette {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, transparent 20%, var(--vignette-color) 120%);
+            z-index: 10;
+            pointer-events: none;
+            transition: background 0.8s ease;
+        }
+
+        /* ==========================================================================
+           HORIZONTE LUMINOSO
+           ========================================================================== */
+        /* LÃ­nea definida del horizonte */
+        .horizon-line {
+            position: absolute;
+            top: var(--horizon-y);
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: var(--electric-blue);
+            box-shadow: 
+                0 0 8px 1px var(--electric-blue),
+                0 0 20px 2px rgba(var(--electric-blue-rgb), 0.5);
+            z-index: 5;
+            opacity: 0.8;
+            transition: background 0.8s ease, box-shadow 0.8s ease;
+        }
+
+        /* ==========================================================================
+           GRID EN PERSPECTIVA (SUELO TECNOLÃ“GICO MEJORADO)
+           ========================================================================== */
+        .grid-container {
+            position: absolute;
+            top: var(--horizon-y);
+            left: 0;
+            width: 100%;
+            height: calc(100vh - var(--horizon-y) + 20vh); /* Cubre el resto de la pantalla */
+            perspective: 350px; /* Perspectiva incrementada (menor valor = mayor profundidad) */
+            perspective-origin: 50% 0%; /* Punto de fuga en el horizonte */
+            z-index: 2;
+        }
+
+        .grid {
+            position: absolute;
+            top: 0;
+            left: -100vw;
+            width: 300vw;
+            height: 200vh; /* Altura extendida para que no se corte por la nueva perspectiva */
+            transform-origin: 50% 0%;
+            transform: rotateX(82deg); /* Ãngulo mÃ¡s extremo para alejar el horizonte */
+            
+            /* CreaciÃ³n de las lÃ­neas puramente con CSS Gradients y variables dinÃ¡micas */
+            background-image:
+                linear-gradient(to right, rgba(var(--electric-blue-rgb), 0.25) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(var(--electric-blue-rgb), 0.25) 1px, transparent 1px);
+            background-size: var(--grid-size) var(--grid-size);
+            
+            /* Difumina la cuadrÃ­cula ajustada al nuevo Ã¡ngulo */
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
+            
+            /* AnimaciÃ³n ajustada proporcionalmente (0.6s) para mantener la misma velocidad visual con celdas mÃ¡s pequeÃ±as */
+            animation: moveGrid 0.6s linear infinite;
+            transition: background-image 0.8s ease;
+        }
+
+        /* Desplaza la textura hacia el horizonte (valores negativos) para un loop perfecto */
+        @keyframes moveGrid {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 calc(var(--grid-size) * -1); }
+        }
+
+        /* ==========================================================================
+           PARTÃCULAS FLOTANTES (3 CAPAS DE POLVO TECNOLÃ“GICO)
+           ========================================================================== */
+        .particles {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            pointer-events: none;
+            transition: background-image 0.8s ease;
+        }
+
+        /* Capa 1: Polvo tecnolÃ³gico muy lejano y tenue */
+        .layer-1 {
+            background-image:
+                radial-gradient(circle at 15% 25%, rgba(var(--electric-blue-rgb), 0.15) 0.5px, transparent 0.5px),
+                radial-gradient(circle at 65% 15%, rgba(var(--electric-blue-rgb), 0.1) 0.5px, transparent 0.5px),
+                radial-gradient(circle at 35% 75%, rgba(var(--electric-blue-rgb), 0.2) 0.5px, transparent 0.5px),
+                radial-gradient(circle at 85% 85%, rgba(var(--electric-blue-rgb), 0.15) 0.5px, transparent 0.5px);
+            background-size: 150px 150px;
+            animation: particleUp1 30s linear infinite;
+        }
+
+        /* Capa 2: Polvo tecnolÃ³gico intermedio */
+        .layer-2 {
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(var(--electric-blue-rgb), 0.25) 1px, transparent 1px),
+                radial-gradient(circle at 40% 60%, rgba(var(--electric-blue-rgb), 0.2) 0.5px, transparent 0.5px),
+                radial-gradient(circle at 80% 30%, rgba(var(--electric-blue-rgb), 0.3) 1px, transparent 1px),
+                radial-gradient(circle at 90% 90%, rgba(var(--electric-blue-rgb), 0.25) 0.5px, transparent 0.5px);
+            background-size: 200px 200px;
+            animation: particleUp2 20s linear infinite;
+        }
+
+        /* Capa 3: Polvo tecnolÃ³gico cercano, sutil desenfoque */
+        .layer-3 {
+            background-image:
+                radial-gradient(circle at 25% 35%, rgba(var(--electric-blue-rgb), 0.4) 1.5px, transparent 1.5px),
+                radial-gradient(circle at 75% 45%, rgba(var(--electric-blue-rgb), 0.25) 1px, transparent 1px),
+                radial-gradient(circle at 45% 85%, rgba(var(--electric-blue-rgb), 0.35) 1.5px, transparent 1.5px),
+                radial-gradient(circle at 95% 15%, rgba(var(--electric-blue-rgb), 0.3) 1px, transparent 1px);
+            background-size: 300px 300px;
+            filter: blur(0.5px);
+            animation: particleUp3 10s linear infinite;
+        }
+
+        /* CÃ¡lculos de loop perfectos restando exactamente el tamaÃ±o del background-size */
+        @keyframes particleUp1 {
+            100% { background-position: 0 -150px, 0 -150px, 0 -150px, 0 -150px; }
+        }
+        @keyframes particleUp2 {
+            100% { background-position: 0 -200px, 0 -200px, 0 -200px, 0 -200px; }
+        }
+        @keyframes particleUp3 {
+            100% { background-position: 0 -300px, 0 -300px, 0 -300px, 0 -300px; }
+        }
+
+        /* ==========================================================================
+           THEME SWITCHER (BOTÃ“N DE CICLO DE PALETAS)
+           ========================================================================== */
+        .palette-switch-wrapper {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            z-index: 100; /* Asegura estar por encima de otros elementos pero sin estorbar */
+        }
+
+        .palette-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: rgba(var(--electric-blue-rgb), 0.1);
+            border: 1px solid rgba(var(--electric-blue-rgb), 0.5);
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(var(--electric-blue-rgb), 0.3),
+                        inset 0 0 10px rgba(var(--electric-blue-rgb), 0.2);
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            backdrop-filter: blur(4px);
+            outline: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .palette-btn::before {
+            content: '';
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--electric-blue);
+            box-shadow: 0 0 8px var(--electric-blue);
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .palette-btn:hover {
+            transform: scale(1.1);
+            background-color: rgba(var(--electric-blue-rgb), 0.2);
+            box-shadow: 0 0 20px rgba(var(--electric-blue-rgb), 0.5),
+                        inset 0 0 10px rgba(var(--electric-blue-rgb), 0.4);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Envoltura cinemÃ¡tica para el efecto hover interactivo -->
+    <div class="cinematic-scene">
+        <!-- Ambiente y resplandores -->
+        <div class="sky-gradient"></div>
+        <div class="horizon-line"></div>
+
+        <!-- Sistema de PartÃ­culas (3 Capas puramente CSS) -->
+        <div class="particles layer-1"></div>
+        <div class="particles layer-2"></div>
+        <div class="particles layer-3"></div>
+
+        <!-- Sistema de CuadrÃ­cula en Perspectiva Extrema -->
+        <div class="grid-container">
+            <div class="grid"></div>
+        </div>
+    </div>
+
+    <!-- Sombreado perimetral (Fuera de la escena para no escalar la viÃ±eta) -->
+    <div class="vignette"></div>
+
+    <!-- BotÃ³n de Cambio de Paleta -->
+    <div class="palette-switch-wrapper">
+        <button id="palette-toggle" class="palette-btn" aria-label="Cambiar paleta de colores"></button>
+    </div>
+
+    <!-- ==========================================================================
+         SCRIPT DE INTERACCIÃ“N Y PROTECCIÃ“N
+         ========================================================================== -->
+    <script>
+        // LÃ³gica del Theme Switcher (Ciclo de Paletas)
+        const themes = ['', 'theme-red', 'theme-yellow', 'theme-green', 'theme-purple'];
+        let currentThemeIndex = 0;
+        const paletteBtn = document.getElementById('palette-toggle');
+
+        paletteBtn.addEventListener('click', function() {
+            // Remover tema actual
+            if (themes[currentThemeIndex]) {
+                document.body.classList.remove(themes[currentThemeIndex]);
+            }
+            
+            // Avanzar al siguiente tema
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            
+            // Aplicar nuevo tema
+            if (themes[currentThemeIndex]) {
+                document.body.classList.add(themes[currentThemeIndex]);
+            }
+        });
+
+        // Bloquear menÃº contextual (clic derecho)
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // Bloquear atajos de teclado de herramientas de desarrollo
+        document.addEventListener('keydown', function(e) {
+            // F12
+            if (e.key === 'F12' || e.keyCode === 123) {
+                e.preventDefault();
+                return false;
+            }
+            // Ctrl+Shift+I (Inspeccionar)
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.keyCode === 73)) {
+                e.preventDefault();
+                return false;
+            }
+            // Ctrl+Shift+J (Consola)
+            if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j' || e.keyCode === 74)) {
+                e.preventDefault();
+                return false;
+            }
+            // Ctrl+Shift+C (Inspeccionar elemento)
+            if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c' || e.keyCode === 67)) {
+                e.preventDefault();
+                return false;
+            }
+            // Ctrl+U (Ver cÃ³digo fuente)
+            if (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.keyCode === 85)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>
