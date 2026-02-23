@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+  <title>Cutey` Profile</title>
+  <style>
+    body {
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      font-family: ' Times New Roman', Times New Roman, Times New Roman;
+      text-transform: lowercase;
+      height: 100%;
+      width: 100%;
+      margin: auto;
+      background: linear-gradient(315deg, rgba(101, 0, 94, 1) 3%, rgba(60, 132, 206, 1) 38%, rgba(48, 238, 226, 1) 68%, rgba(255, 25, 25, 1) 98%);
+      animation: gradient 15s ease infinite;
+      background-size: 400% 400%;
+      background-attachment: fixed;
+    }
+
+    @keyframes gradient {
+      0% {
+        background-position: 0% 0%;
+      }
+
+      50% {
+        background-position: 100% 100%;
+      }
+
+      100% {
+        background-position: 0% 0%;
+      }
+    }
+
+    .waves-wrapper {
+      background: -moz-radial-gradient(center, ellipse cover, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.44) 100%);
+      /* FF3.6+ */
+      background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%, rgba(0, 0, 0, 0)), color-stop(100%, rgba(0, 0, 0, 0.44)));
+      /* Chrome10+,Safari5.1+ */
+      background: -o-radial-gradient(center, ellipse cover, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.44) 100%);
+      /* Opera 12+ */
+      background: -ms-radial-gradient(center, ellipse cover, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.44) 100%);
+    }
+
+    .wave {
+      background: rgb(255 255 255 / 25%);
+      border-radius: 1000% 1000% 0 0;
+      position: fixed;
+      width: 200%;
+      height: 12em;
+      animation: wave 10s -3s linear infinite;
+      transform: translate3d(0, 0, 0);
+      opacity: 0.8;
+      bottom: 0;
+      left: 0;
+      z-index: -1;
+    }
+
+    .wave:nth-of-type(2) {
+      bottom: -1.25em;
+      animation: wave 18s linear reverse infinite;
+      opacity: 0.8;
+    }
+
+    .wave:nth-of-type(3) {
+      bottom: -2.5em;
+      animation: wave 20s -1s reverse infinite;
+      opacity: 0.9;
+    }
+
+    @keyframes wave {
+      2% {
+        transform: translateX(1);
+      }
+
+      25% {
+        transform: translateX(-25%);
+      }
+
+      50% {
+        transform: translateX(-50%);
+      }
+
+      75% {
+        transform: translateX(-25%);
+      }
+
+      100% {
+        transform: translateX(1);
+      }
+    }
+
+    p {
+      display: block;
+      text-align: center;
+      position: absolute;
+      top: 62%;
+      right: 0px;
+      width: 500px;
+      font-size: 0.50em;
+      line-height: 2em;
+    }
+
+    i {
+      display: inline-block;
+      font-style: normal;
+      padding: 0 0.25em;
+      -webkit-transform: scale(0) translate3d(0, -2000px, 0);
+      -moz-transform: scale(0) translate3d(0, -2000px, 0);
+      -ms-transform: scale(0) translate3d(0, -2000px, 0);
+      -o-transform: scale(0) translate3d(0, -2000px, 0);
+      transform: scale(0) translate3d(0, -2000px, 0);
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+    }
+
+    i.fly-in-out {
+      -webkit-animation: fly-in-out 3s infinite ease-in-out;
+      -moz-animation: fly-in-out 3s infinite ease-in-out;
+      -o-animation: fly-in-out 3s infinite ease-in-out;
+      animation: fly-in-out 3s infinite ease-in-out;
+    }
+
+    @-webkit-keyframes fly-in-out {
+      0% {
+        -webkit-transform: scale(0) translate3d(0, -1000px, 0);
+        background: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 100px 100px rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+      }
+
+      15%,
+      85% {
+        color: rgba(255, 255, 255, 0.8);
+        text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        -webkit-transform: scale(1) translate3d(0, 0, 0);
+        background: transparent;
+        box-shadow: none;
+      }
+
+      100% {
+        color: transparent;
+        -webkit-transform: scale(0) translate3d(0, 1000px, 0);
+        background: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 100px 100px rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+      }
+    }
+
+    @-moz-keyframes fly-in-out {
+      0% {
+        -moz-transform: scale(0) translate3d(0, -2000px, 0);
+        background: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 100px 100px rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+      }
+
+      15%,
+      85% {
+        color: rgba(255, 255, 255, 0.8);
+        text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        -moz-transform: scale(1) translate3d(0, 0, 0);
+        background: transparent;
+        box-shadow: none;
+      }
+
+      100% {
+        color: transparent;
+        -moz-transform: scale(0) translate3d(0, 2000px, 0);
+        background: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 100px 100px rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+      }
+    }
+
+    @-o-keyframes fly-in-out {
+      0% {
+        -o-transform: scale(0) translate3d(0, -2000px, 0);
+        background: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 100px 100px rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+      }
+
+      15%,
+      85% {
+        color: rgba(255, 255, 255, 0.8);
+        text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        -o-transform: scale(1) translate3d(0, 0, 0);
+        background: transparent;
+        box-shadow: none;
+      }
+
+      100% {
+        color: transparent;
+        -o-transform: scale(0) translate3d(0, 2000px, 0);
+        background: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 100px 100px rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+      }
+    }
+
+    @keyframes fly-in-out {
+      0% {
+        transform: scale(0) translate3d(0, -2000px, 0);
+        background: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 100px 100px rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+      }
+
+      15%,
+      85% {
+        color: rgba(255, 255, 255, 0.8);
+        text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        transform: scale(1) translate3d(0, 0, 0);
+        background: transparent;
+        box-shadow: none;
+      }
+
+      100% {
+        color: transparent;
+        transform: scale(0) translate3d(0, 2000px, 0);
+        background: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 100px 100px rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+      }
+    }
+
+    div {
+      display: block;
+      position: absolute;
+      margin: auto;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
+
+    .wrapper {
+      height: 400px;
+      width: 600px;
+      margin: auto;
+      font-family: 'Clicker Script', cursive;
+    }
+
+    .cloud {
+      background: #BDA1B8;
+      width: 90px;
+      height: 42px;
+      -webkit-animation: clouds 40s infinite;
+      margin-left: 0;
+    }
+
+    .cloud:before {
+      border-radius: 50%;
+      box-shadow: 20px -20px 0 0 #BDA1B8,
+        90px 0 0 0 #BDA1B8,
+        60px -27px 0 8px #BDA1B8;
+      content: "";
+      position: absolute;
+      width: 48px;
+      height: 48px;
+      left: -22px;
+      bottom: 0;
+      background: #BDA1B8;
+    }
+
+    .cloud:nth-child(1) {
+      top: auto;
+      bottom: 120px;
+      opacity: 0.85
+    }
+
+    .cloud:nth-child(2) {
+      right: auto;
+      left: 320px;
+      opacity: 0.5
+    }
+
+    .cloud:nth-child(3) {
+      bottom: auto;
+      top: 120px;
+      right: auto;
+      left: 80px;
+      opacity: 0.75;
+    }
+
+    .cloud:nth-child(4) {
+      bottom: auto;
+      top: 20px;
+      right: auto;
+      left: 320px;
+      opacity: 0.65;
+    }
+
+    .moon {
+      height: 120px;
+      width: 120px;
+      background: #B6537D;
+      border-radius: 60px;
+      box-shadow: 0 0 60px 1px #444444;
+    }
+
+    .moon:before {
+      border-radius: 60px;
+      box-shadow: 10px -50px 0 0 #9F426A,
+        50px 0 0 0 #9F426A,
+        50px -37px 0 10px #9F426A;
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      left: 30px;
+      bottom: 10px;
+      background: #9F426A;
+    }
+
+    .cat {
+      background: #EEEEEE;
+      height: 60px;
+      top: auto;
+      bottom: 200px;
+      width: 60px;
+      z-index: 0;
+      -webkit-transition: all linear 1s;
+    }
+
+    .cat:before,
+    .cat:after {
+      width: 0;
+      height: 0;
+      top: -10px;
+      position: absolute;
+      content: "";
+    }
+
+    .cat:before {
+      border-left: 0px solid transparent;
+      border-right: 15px solid transparent;
+      border-bottom: 15px solid #EEE;
+      left: 0;
+    }
+
+    .cat:after {
+      border-right: 0px solid transparent;
+      border-left: 15px solid transparent;
+      border-bottom: 15px solid #EEE;
+      right: 0;
+    }
+
+    .cat .eyes {
+      position: absolute;
+      height: 8px;
+      width: 8px;
+      background: #C3517D;
+      border-radius: 100%;
+      top: 15px;
+    }
+
+    .cat .eyes.left {
+      left: 12px;
+    }
+
+    .cat .eyes.right {
+      right: 12px;
+    }
+
+    .cat .mouth {
+      position: absolute;
+      height: 4px;
+      width: 60%;
+      background: #C3517D;
+      border-radius: 0 0 30% 30%;
+      top: 28px;
+      margin: auto;
+      left: 0;
+      right: 0;
+    }
+
+    .wrapper:hover .cat {
+      bottom: 240px;
+    }
+
+    @-webkit-keyframes clouds
+
+    /*Safari and Chrome*/
+      {
+      0 {
+        margin-left: 0;
+      }
+
+      25% {
+        margin-left: 100px;
+      }
+
+      50% {
+        margin-left: 0;
+      }
+
+      75% {
+        margin-left: 30px;
+      }
+
+      100% {
+        margin-left: 0;
+      }
+    }
+  </style>
+
+  <body>
+    <p>XAT.COM</p>
+    <div class="wrapper">
+
+      <div class="cat">
+        <span class="eyes left"></span>
+        <span class="eyes right"></span>
+        <span class="mouth"></span>
+      </div>
+
+      <div class="moon">
+        <div class="sphere"></div>
+
+      </div>
+
+      <div class="cloud-container">
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+      </div>
+
+      <div class="waves-wrapper">
+        <div>
+          <div class="wave"></div>
+          <div class="wave"></div>
+          <div class="wave"></div>
+        </div>
+      </div>
+
+    </div>
+  </body>
+
+  <script>
+    var paragraph = document.getElementsByTagName('p')[0];
+    function textEffect(animationName) {
+      var text = paragraph.innerHTML,
+        chars = text.length,
+        newText = '',
+        animation = animationName,
+        char,
+        i;
+
+      for(i = 0; i < chars; i += 1) {
+        newText += '<i>' + text.charAt(i) + '</i>';
+      }
+
+      paragraph.innerHTML = newText;
+
+      var wrappedChars = document.getElementsByTagName('i'),
+        wrappedCharsLen = wrappedChars.length,
+        j = 0;
+
+      function addEffect() {
+        setTimeout(function () {
+          wrappedChars[j].className = animation;
+          j += 1;
+          if(j < wrappedCharsLen) {
+            addEffect();
+          }
+        }, 100)
+      }
+
+      addEffect();
+    };
+    textEffect('fly-in-out');
+  </script>
+
+</html>
