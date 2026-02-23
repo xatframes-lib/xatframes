@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <!-- Viewport bloqueado para evitar zoom y reinterpretaciones en mÃ³vil -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Xat Starry Night</title>
+    <style>
+        /* ==========================================
+           RESETEO BASE Y COMPATIBILIDAD MÃ“VIL
+           ========================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100vh; 
+            height: 100dvh; 
+            overflow: hidden; 
+            background: linear-gradient(180deg, #000000 0%, #02040a 35%, #080c22 65%, #151e45 100%);
+            font-family: sans-serif;
+            background-attachment: fixed;
+            -webkit-text-size-adjust: 100%;
+            overscroll-behavior: none;
+        }
+
+        /* ==========================================
+           CONTENEDORES PRINCIPALES
+           ========================================== */
+        #sky-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 150vmax;
+            height: 150vmax;
+            transform: translate(-50%, -50%);
+            animation: slow-pan 800s linear infinite;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #comets-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* ==========================================
+           PLANETA (ESCALADO PROPORCIONAL EXACTO)
+           ========================================== */
+        .planet-wrapper {
+            position: absolute;
+            top: calc(12% + env(safe-area-inset-top));
+            right: calc(12% + env(safe-area-inset-right));
+            /* Reemplazamos 160px por 11vw para que escale exactamente igual que las montaÃ±as (100%) */
+            width: 11vw;
+            height: 11vw;
+            z-index: 3;
+            overflow: visible; 
+            animation: float 12s ease-in-out infinite alternate;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .planet-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 380%; 
+            height: 380%;
+            background: radial-gradient(circle, rgba(180, 220, 255, 0.45) 0%, rgba(100, 160, 255, 0.2) 25%, rgba(50, 100, 200, 0.05) 50%, transparent 70%);
+            border-radius: 50%;
+            z-index: -1;
+            animation: pulse-atmosphere 4s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+
+        .planet-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; 
+            display: block;
+            animation: planet-energy 4s ease-in-out infinite alternate;
+            will-change: filter, transform;
+        }
+
+        /* ==========================================
+           MONTAÃ‘AS CINEMATOGRÃFICAS
+           ========================================== */
+        .mountains-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 4;
+            pointer-events: none;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .mountain-layer {
+            display: block;
+            width: 100%;
+            height: auto;
+            filter: brightness(0);
+        }
+
+        .base-darken {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40%;
+            background: linear-gradient(to top, rgba(0,0,0,1) 10%, rgba(2,3,8,0.8) 40%, transparent 100%);
+            z-index: 5;
+        }
+
+        /* ==========================================
+           ESTRELLAS
+           ========================================== */
+        .star {
+            position: absolute;
+            background-color: #ffffff;
+            border-radius: 50%;
+        }
+        .star-sm { width: 1px; height: 1px; opacity: 0.3; }
+        .star-md { width: 2px; height: 2px; opacity: 0.6; }
+        .star-lg { 
+            width: 3px; height: 3px; opacity: 0.9; 
+            box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.8); 
+            background-color: #e6f2ff; 
+        }
+
+        /* ==========================================
+           COMETAS PROFESIONALES
+           ========================================== */
+        .comet {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #ffffff;
+            border-radius: 50%;
+            box-shadow: 
+                0 0 15px 5px rgba(255, 255, 255, 1),
+                0 0 30px 10px rgba(100, 180, 255, 0.8);
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+
+        .comet::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 1px;
+            transform: translateY(-50%);
+            width: var(--tail-length, 0px);
+            height: 1.5px;
+            background: linear-gradient(to right, rgba(255, 255, 255, 1) 0%, rgba(100, 180, 255, 0.8) 15%, rgba(50, 100, 200, 0.3) 50%, transparent 100%);
+            filter: blur(0.8px);
+        }
+
+        /* ==========================================
+           ANIMACIONES (@keyframes)
+           ========================================== */
+        @keyframes slow-pan {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.1; transform: scale(0.8); filter: brightness(0.8); }
+            50% { opacity: 1; transform: scale(1.1); filter: brightness(1.5); }
+            100% { opacity: 0.1; transform: scale(0.8); filter: brightness(0.8); }
+        }
+
+        @keyframes pulse-atmosphere {
+            0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.6; }
+            100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+        }
+
+        @keyframes planet-energy {
+            0% {
+                filter: 
+                    drop-shadow(0 0 12px rgba(255, 255, 255, 0.8))
+                    drop-shadow(0 0 30px rgba(200, 230, 255, 0.5))
+                    drop-shadow(0 0 60px rgba(150, 200, 255, 0.2));
+                transform: scale(0.98);
+            }
+            100% {
+                filter: 
+                    drop-shadow(0 0 20px rgba(255, 255, 255, 1))
+                    drop-shadow(0 0 45px rgba(200, 230, 255, 0.8))
+                    drop-shadow(0 0 85px rgba(150, 200, 255, 0.4));
+                transform: scale(1.02);
+            }
+        }
+
+        @keyframes float {
+            0% { top: calc(12% + env(safe-area-inset-top)); }
+            100% { top: calc(11% + env(safe-area-inset-top)); }
+        }
+
+        /* Se eliminÃ³ intencionalmente el bloque @media para garantizar un escalado idÃ©ntico en PC y MÃ³vil */
+    </style>
+</head>
+<body>
+
+    <!-- Capa 1: Fondo Estrellado -->
+    <div id="sky-container"></div>
+
+    <!-- Capa 2: Meteoros -->
+    <div id="comets-layer"></div>
+
+    <!-- Capa 3: Planeta (EnergÃ­a viva y Clickeable) -->
+    <a href="https://xat.com" target="_blank" rel="noopener noreferrer" class="planet-wrapper" aria-label="Visitar xat.com">
+        <img src="https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/ablogo.svg" alt="Luna / Planeta" class="planet-img">
+    </a>
+
+    <!-- Capa 4: MontaÃ±as (EstÃ¡ticas, sin blur, integradas) -->
+    <div class="mountains-container">
+        <img src="https://raw.githubusercontent.com/eamxat/Images/2357a4fcce69814efa2ec8d3d209d49856daa0c6/Monta%C3%B1as2.png" alt="MontaÃ±as EstÃ¡ticas" class="mountain-layer">
+        <div class="base-darken"></div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            
+            /* ==========================================
+               1. ESTRELLAS
+               ========================================== */
+            const sky = document.getElementById("sky-container");
+            const numStars = 400;
+
+            for (let i = 0; i < numStars; i++) {
+                const star = document.createElement("div");
+                star.classList.add("star");
+
+                const rand = Math.random();
+                if (rand < 0.70) star.classList.add("star-sm");
+                else if (rand < 0.95) star.classList.add("star-md");
+                else star.classList.add("star-lg");
+
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+
+                const duration = 2 + Math.random() * 5; 
+                const delay = Math.random() * 5; 
+                star.style.opacity = (Math.random() * 0.5 + 0.3).toFixed(2);
+                star.style.animation = `twinkle ${duration}s ease-in-out ${delay}s infinite alternate`;
+
+                sky.appendChild(star);
+            }
+
+            /* ==========================================
+               2. COMETAS ORGÃNICOS (FÃSICAS REALES CON JS)
+               ========================================== */
+            const cometsLayer = document.getElementById("comets-layer");
+            let activeComets = [];
+
+            function createOrganicComet() {
+                const cometEl = document.createElement("div");
+                cometEl.classList.add("comet");
+                cometsLayer.appendChild(cometEl);
+
+                const startX = window.innerWidth * 0.5 + Math.random() * window.innerWidth;
+                const startY = -100 - Math.random() * 200;
+
+                const angle = (140 + Math.random() * 30) * Math.PI / 180;
+                const speed = 8 + Math.random() * 12;
+
+                const comet = {
+                    el: cometEl,
+                    x: startX,
+                    y: startY,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    gravity: 0.04 + Math.random() * 0.06, 
+                    scale: 0.5 + Math.random() * 0.8,
+                    life: 0,
+                    maxLife: 100 + Math.random() * 120, 
+                    tailBaseLength: 8 + Math.random() * 6 
+                };
+
+                activeComets.push(comet);
+            }
+
+            function animateComets() {
+                for (let i = activeComets.length - 1; i >= 0; i--) {
+                    const c = activeComets[i];
+                    c.life++;
+
+                    c.vy += c.gravity;
+                    c.x += c.vx;
+                    c.y += c.vy;
+
+                    const currentSpeed = Math.hypot(c.vx, c.vy);
+                    const tailLength = currentSpeed * c.tailBaseLength;
+
+                    const headingAngle = Math.atan2(c.vy, c.vx) * 180 / Math.PI;
+                    const tailAngle = headingAngle + 180;
+
+                    let opacity = 1;
+                    const fadeInTicks = c.maxLife * 0.15;
+                    const fadeOutTicks = c.maxLife * 0.35;
+
+                    if (c.life < fadeInTicks) {
+                        opacity = c.life / fadeInTicks;
+                    } else if (c.life > c.maxLife - fadeOutTicks) {
+                        opacity = Math.max(0, (c.maxLife - c.life) / fadeOutTicks);
+                    }
+
+                    c.el.style.transform = `translate(${c.x}px, ${c.y}px) rotate(${tailAngle}deg) scale(${c.scale})`;
+                    c.el.style.opacity = opacity.toFixed(3);
+                    c.el.style.setProperty('--tail-length', `${tailLength}px`);
+
+                    if (c.life >= c.maxLife || c.y > window.innerHeight + 200 || c.x < -200) {
+                        c.el.remove();
+                        activeComets.splice(i, 1);
+                    }
+                }
+                requestAnimationFrame(animateComets);
+            }
+
+            function cometSpawner() {
+                if (activeComets.length < 5 && Math.random() > 0.3) {
+                    createOrganicComet();
+                }
+                const nextSpawn = 1200 + Math.random() * 4500;
+                setTimeout(cometSpawner, nextSpawn);
+            }
+
+            requestAnimationFrame(animateComets);
+            setTimeout(cometSpawner, 800);
+        });
+    </script>
+</body>
+</html>
