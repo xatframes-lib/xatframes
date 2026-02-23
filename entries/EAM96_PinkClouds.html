@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Xat Pink Clouds</title>
+    <style>
+        /* =========================================
+           Variables y ConfiguraciÃ³n Base
+        ========================================= */
+        :root {
+            /* Degradado de cielo exacto */
+            --color-top: #e7799c;
+            --color-mid: #f3b6c6;
+            --color-bot: #f8dce4;
+            
+            /* Velocidades de Parallax (Movimiento mÃ¡s Ã¡gil y dinÃ¡mico) */
+            --speed-altitude: 180s; /* Capa superior mÃ¡s rÃ¡pida pero sigue siendo la mÃ¡s lenta */
+            --speed-mist-back: 120s;
+            --speed-cloud-back: 100s;
+            --speed-mist-mid: 80s;
+            --speed-cloud-mid: 60s;
+            --speed-mist-front: 45s;
+            --speed-cloud-front: 30s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* PrevenciÃ³n absoluta de scroll y manejo de 100dvh para iOS */
+        body, html {
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            background: linear-gradient(to bottom, var(--color-top) 0%, var(--color-mid) 50%, var(--color-bot) 100%);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* =========================================
+           Sistema de Capas
+        ========================================= */
+        .sky-scene {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Contenedor que duplica su ancho (200%) para el loop infinito perfecto */
+        .parallax-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 200%; 
+            display: flex;
+            align-items: flex-start;
+            /* OptimizaciÃ³n crÃ­tica para 60fps animando solo contenedores */
+            will-change: transform;
+            animation: cinematic-drift linear infinite;
+        }
+
+        /* Representa el ancho exacto de una pantalla (100vw). Se clona para el loop. */
+        .layer-group {
+            width: 50%; 
+            height: 100%;
+            position: relative;
+        }
+
+        /* =========================================
+           DISEÃ‘O DE NUBES - CSS PURO (INALTERADO)
+        ========================================= */
+        .cloud-wrapper {
+            position: absolute;
+            /* AplicaciÃ³n de variables CSS para escalado y volteo dinÃ¡mico */
+            transform: scale(var(--base-scale)) var(--flip, );
+            will-change: transform, opacity;
+        }
+
+        /* Responsividad Nativa: Reducir escala en mÃ³viles para no saturar la pantalla 
+           y evitar deformaciones, manteniendo proporciones perfectas. */
+        @media (max-width: 768px) {
+            .cloud-wrapper {
+                transform: scale(calc(var(--base-scale) * 0.6)) var(--flip, );
+            }
+        }
+
+        /* Contenedor principal de la nube (RectÃ¡ngulo horizontal con bordes redondeados) */
+        .css-cloud {
+            width: 350px;
+            height: 120px;
+            /* Gradiente vertical suave interno */
+            background: linear-gradient(to bottom, #ffffff 0%, #f4f6f9 100%);
+            border-radius: 100px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Pseudo-elementos (CÃ­rculos superiores para la silueta orgÃ¡nica) */
+        .css-cloud::before, .css-cloud::after {
+            content: '';
+            position: absolute;
+            /* El color blanco puro coincide con el 0% del gradiente principal */
+            background: #ffffff; 
+            border-radius: 50%;
+        }
+
+        /* CÃ­rculo mayor (Centro-Izquierda) */
+        .css-cloud::before {
+            width: 180px;
+            height: 180px;
+            top: -90px;
+            left: 60px;
+        }
+
+        /* CÃ­rculo menor (Derecha) */
+        .css-cloud::after {
+            width: 130px;
+            height: 130px;
+            top: -50px;
+            right: 50px;
+        }
+
+        /* Sombra inferior ovalada y difuminada */
+        .cloud-shadow {
+            position: absolute;
+            bottom: -15px;
+            left: 25px;
+            width: 300px;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.04);
+            border-radius: 50%;
+            filter: blur(6px);
+            z-index: 1; /* DetrÃ¡s de la nube principal */
+        }
+
+        /* ConfiguraciÃ³n de Profundidad por Capa de Nubes */
+        .clouds-back {
+            animation-duration: var(--speed-cloud-back);
+            filter: blur(3px);
+        }
+
+        .clouds-mid {
+            animation-duration: var(--speed-cloud-mid);
+            filter: blur(1px);
+        }
+
+        .clouds-front {
+            animation-duration: var(--speed-cloud-front);
+        }
+
+        /* =========================================
+           Efecto Mist Original (Niebla TranslÃºcida)
+        ========================================= */
+        .mist-blob {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(ellipse at center, rgba(255,255,255,0.06) 0%, transparent 65%);
+            mix-blend-mode: screen;
+            will-change: opacity;
+        }
+
+        .mist-back { animation-duration: var(--speed-mist-back); }
+        .mist-mid { animation-duration: var(--speed-mist-mid); }
+        .mist-front { animation-duration: var(--speed-mist-front); }
+
+        /* =========================================
+           Efecto Neblina de Altura (NUEVA CAPA)
+        ========================================= */
+        .altitude-layer {
+            animation-duration: var(--speed-altitude);
+            z-index: 10; /* Capa superior para dar sensaciÃ³n de profundidad y altitud */
+        }
+
+        .altitude-blob {
+            position: absolute;
+            border-radius: 50%;
+            /* Gradiente vertical suave: mÃ¡s intenso en la base, sutil arriba */
+            background: radial-gradient(ellipse at bottom center, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 70%);
+            mix-blend-mode: screen;
+            will-change: transform, opacity;
+        }
+
+        /* =========================================
+           AnimaciÃ³n de Desplazamiento
+        ========================================= */
+        @keyframes cinematic-drift {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-50%, 0, 0); }
+        }
+
+        /* =========================================
+           Planeta Flotante
+        ========================================= */
+        .planet-container {
+            position: absolute;
+            bottom: 5vh; /* Ajuste de altura desde el fondo */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100; /* Asegura que estÃ© por encima de todas las nubes */
+        }
+
+        .planet-link {
+            display: block;
+            animation: floating-planet 6s ease-in-out infinite;
+            transition: transform 0.3s ease, filter 0.3s ease;
+            cursor: pointer;
+            /* Permite hacer clic incluso si elementos invisibles estÃ¡n superpuestos */
+            position: relative; 
+        }
+
+        .planet-link:hover {
+            transform: scale(1.05); /* Ligero aumento al pasar el mouse */
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.4));
+        }
+
+        .planet-img {
+            width: clamp(150px, 22vw, 280px); /* TamaÃ±o responsivo (mÃ­nimo, ideal, mÃ¡ximo) */
+            height: auto;
+            filter: drop-shadow(0 15px 25px rgba(231, 121, 156, 0.5)); /* Sombra rosa suave */
+        }
+
+        @keyframes floating-planet {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-25px); }
+            100% { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Escena Principal -->
+    <div class="sky-scene">
+        
+        <!-- Capa 1: Niebla Profunda -->
+        <div class="parallax-layer mist-back" id="layerMistBack"></div>
+        
+        <!-- Capa 2: Nubes Lejanas -->
+        <div class="parallax-layer clouds-back" id="layerCloudsBack"></div>
+
+        <!-- Capa 3: Niebla Media -->
+        <div class="parallax-layer mist-mid" id="layerMistMid"></div>
+
+        <!-- Capa 4: Nubes Intermedias -->
+        <div class="parallax-layer clouds-mid" id="layerCloudsMid"></div>
+
+        <!-- Capa 5: Niebla Frontal -->
+        <div class="parallax-layer mist-front" id="layerMistFront"></div>
+
+        <!-- Capa 6: Nubes Cercanas -->
+        <div class="parallax-layer clouds-front" id="layerCloudsFront"></div>
+
+        <!-- Capa 7: Neblina de Altura -->
+        <div class="parallax-layer altitude-layer" id="layerAltitude"></div>
+
+    </div>
+
+    <!-- Planeta Flotante Clickable -->
+    <div class="planet-container">
+        <a href="https://xat.com" target="_blank" class="planet-link">
+            <img src="https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/planetarosa.png" alt="" class="planet-img">
+        </a>
+    </div>
+
+    <script>
+        /**
+         * =========================================
+         * Generador de Entorno (Algoritmo de Espaciado Mejorado)
+         * =========================================
+         */
+
+        /**
+         * FunciÃ³n para poblar dinÃ¡micamente las capas utilizando un sistema de
+         * cuadrÃ­cula con "Jitter" (desplazamiento controlado) para asegurar
+         * padding visual, evitar superposiciones de masas y garantizar aire entre siluetas.
+         * * @param {string} layerId - ID de la capa contenedor
+         * @param {number} count - Cantidad de elementos
+         * @param {number} minScale - Escala mÃ­nima
+         * @param {number} maxScale - Escala mÃ¡xima
+         * @param {number} baseOpacity - Opacidad base
+         * @param {string} type - Tipo de elemento ('cloud', 'mist', 'altitude')
+         */
+        function proceduralGeneration(layerId, count, minScale, maxScale, baseOpacity, type = 'cloud') {
+            const layerElement = document.getElementById(layerId);
+            const fragment = document.createDocumentFragment();
+            
+            // Grupo que representa 100vw exactos
+            const group = document.createElement('div');
+            group.className = 'layer-group';
+
+            // --- SISTEMA DE DISTRIBUCIÃ“N ESPACIAL (Jittered Grid) ---
+            // Divide el viewport en celdas invisibles para forzar la separaciÃ³n
+            const aspect = 1.5; // Ajuste para orientar la cuadrÃ­cula horizontalmente
+            const gridCols = Math.ceil(Math.sqrt(count * aspect));
+            const gridRows = Math.ceil(count / gridCols);
+            
+            const cellWidth = 120 / gridCols;  // El espacio abarca de -10% a 110% (120vw)
+            const cellHeight = 130 / gridRows; // El espacio abarca de -15% a 115% (130vh)
+
+            // Crear array de celdas disponibles
+            let cells = [];
+            for (let r = 0; r < gridRows; r++) {
+                for (let c = 0; c < gridCols; c++) {
+                    cells.push({r, c});
+                }
+            }
+            
+            // Mezcla aleatoria (Algoritmo Fisher-Yates) para distribuir orgÃ¡nicamente
+            for (let i = cells.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [cells[i], cells[j]] = [cells[j], cells[i]];
+            }
+
+            for (let i = 0; i < count; i++) {
+                const cell = cells[i % cells.length];
+                
+                // JITTER: Desplazamiento aleatorio dentro de la celda.
+                // Limitar entre 0.2 y 0.8 garantiza un "padding visual" mÃ­nimo
+                // impidiendo que nubes de celdas adyacentes colisionen bruscamente.
+                const jitterX = (0.2 + (Math.random() * 0.6)) * cellWidth;
+                const jitterY = (0.2 + (Math.random() * 0.6)) * cellHeight;
+
+                const leftPos = -10 + (cell.c * cellWidth) + jitterX;
+                const topPos = -15 + (cell.r * cellHeight) + jitterY;
+                
+                if (type === 'mist') {
+                    // --- GENERACIÃ“N DE NIEBLA BASE ---
+                    const mist = document.createElement('div');
+                    mist.className = 'mist-blob';
+                    
+                    const widthVW = 60 + Math.random() * 80;
+                    
+                    mist.style.top = `${topPos}%`;
+                    mist.style.left = `${leftPos}%`;
+                    mist.style.width = `${widthVW}vw`;
+                    mist.style.height = `${widthVW * 0.35}vw`;
+                    mist.style.opacity = Math.max(0.1, Math.min(1, baseOpacity + (Math.random() * 0.3 - 0.15)));
+                    
+                    group.appendChild(mist);
+
+                } else if (type === 'altitude') {
+                    // --- GENERACIÃ“N DE NEBLINA DE ALTURA ---
+                    const altitudeMist = document.createElement('div');
+                    altitudeMist.className = 'altitude-blob';
+                    
+                    const widthVW = 150 + Math.random() * 100;
+                    const heightVH = 60 + Math.random() * 40;
+                    
+                    altitudeMist.style.bottom = `${(Math.random() * 20) - 15}vh`; 
+                    altitudeMist.style.left = `${leftPos}%`;
+                    altitudeMist.style.width = `${widthVW}vw`;
+                    altitudeMist.style.height = `${heightVH}vh`;
+                    
+                    const opacity = (0.05 + Math.random() * 0.10).toFixed(3);
+                    altitudeMist.style.opacity = opacity;
+                    
+                    group.appendChild(altitudeMist);
+
+                } else {
+                    // --- GENERACIÃ“N DE NUBES CSS PURO ---
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'cloud-wrapper';
+                    
+                    const scale = minScale + (Math.random() * (maxScale - minScale));
+                    const opacity = Math.max(0.1, Math.min(1, baseOpacity + (Math.random() * 0.3 - 0.15)));
+                    
+                    wrapper.style.top = `${topPos}%`;
+                    wrapper.style.left = `${leftPos}%`;
+                    wrapper.style.opacity = opacity;
+                    
+                    wrapper.style.setProperty('--base-scale', scale.toFixed(2));
+                    
+                    if (Math.random() > 0.5) {
+                        wrapper.style.setProperty('--flip', 'scaleX(-1)');
+                    } else {
+                        wrapper.style.setProperty('--flip', 'scaleX(1)');
+                    }
+
+                    // Elementos internos inalterados (El diseÃ±o es exactamente igual)
+                    const cloud = document.createElement('div');
+                    cloud.className = 'css-cloud';
+                    
+                    const shadow = document.createElement('div');
+                    shadow.className = 'cloud-shadow';
+                    
+                    cloud.appendChild(shadow);
+                    wrapper.appendChild(cloud);
+                    
+                    group.appendChild(wrapper);
+                }
+            }
+
+            // Inyectar el grupo base y un clon exacto para el loop
+            fragment.appendChild(group);
+            fragment.appendChild(group.cloneNode(true));
+            layerElement.appendChild(fragment);
+        }
+
+        // Ejecutar la generaciÃ³n masiva al cargar
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // ==========================================
+            // ESCALADO BALANCEADO Y ESPACIADO (Grid System)
+            // Se han ajustado las cantidades y forzado la separaciÃ³n
+            // geomÃ©trica para permitir respirar al fondo rosado.
+            // ==========================================
+
+            // 1. Niebla Profunda
+            proceduralGeneration('layerMistBack', 8, 0, 0, 0.6, 'mist');
+
+            // 2. NUBES LEJANAS (Bajado a 45 - Espaciado Ã³ptimo)
+            proceduralGeneration('layerCloudsBack', 45, 0.25, 0.5, 0.4, 'cloud');
+
+            // 3. Niebla Media
+            proceduralGeneration('layerMistMid', 6, 0, 0, 0.7, 'mist');
+
+            // 4. NUBES INTERMEDIAS (Bajado a 25 - Gran aire entre siluetas)
+            proceduralGeneration('layerCloudsMid', 25, 0.5, 0.8, 0.7, 'cloud');
+
+            // 5. Niebla Frontal
+            proceduralGeneration('layerMistFront', 4, 0, 0, 0.8, 'mist');
+
+            // 6. NUBES CERCANAS (Bajado a 10 - Profundidad sin estorbar)
+            proceduralGeneration('layerCloudsFront', 10, 0.8, 1.3, 0.95, 'cloud');
+
+            // 7. NEBLINA DE ALTURA
+            proceduralGeneration('layerAltitude', 8, 0, 0, 0.1, 'altitude');
+
+        });
+
+        // =========================================
+        // Bloqueo de Seguridad (Click Derecho y F12)
+        // =========================================
+        
+        // Bloquear Click Derecho
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // Bloquear F12 y atajos de herramientas para desarrolladores
+        document.addEventListener('keydown', function(e) {
+            // Bloquear F12
+            if (e.key === 'F12' || e.keyCode === 123) {
+                e.preventDefault();
+            }
+            // Bloquear Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+            if (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].includes(e.key)) {
+                e.preventDefault();
+            }
+            // Bloquear Ctrl+U (Ver cÃ³digo fuente)
+            if (e.ctrlKey && (e.key === 'U' || e.key === 'u')) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
