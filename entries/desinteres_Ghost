@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+  <!-- Efecto adaptado por: Expiador/Desinteres -->
+<!-- Preview: https://iexpiador.github.io/xatframe_ghost/ -->
+<html lang="en/es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fantasmas / by: Desinteres</title>
+<style>
+html, body{
+    margin:0;
+    padding:0;
+    background-color:hsl(195, 100%, 7%);
+}
+
+#canvas{
+    margin:0 auto;
+    display:block;
+}
+</style>
+</head>
+<body>
+
+<canvas id="canvas">Tu navegador no soporta canvas :v</canvas>
+
+<script>
+// Constante para calcular Ã¡ngulos en radianes (cÃ­rculo completo)
+const TWO_PI = Math.PI * 2;
+
+// Devuelve un nÃºmero entero aleatorio entre un valor mÃ­nimo y mÃ¡ximo
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// Clase principal de la aplicaciÃ³n
+class Application {
+    constructor() {
+        this.canvas = document.getElementById("canvas");
+        this.context = this.canvas.getContext("2d");
+        this.width = this.canvas.width = window.innerWidth;
+        this.height = this.canvas.height = window.innerHeight;
+
+        // PosiciÃ³n inicial del mouse para que los ojos miren al centro
+        this.mousePosition = { x: this.width / 2, y: this.height / 2 };
+
+        // Crea varios fantasmas segÃºn el tamaÃ±o de la pantalla
+        this.ghosts = [];
+        this.numberOfGhosts = Math.round((this.width + this.height) / 200);
+
+        // Escucha cambios de tamaÃ±o y movimiento del mouse o dedo
+        window.addEventListener('resize', () => this.resizeCanvas(), false);
+        window.addEventListener('mousemove', (e) => this.mouseMove(e), false);
+        window.addEventListener('touchmove', (e) => this.touchMove(e), false);
+    }
+
+    // Reajusta el tamaÃ±o del canvas y vuelve a generar los fantasmas
+    resizeCanvas() {
+        this.width = this.canvas.width = window.innerWidth;
+        this.height = this.canvas.height = window.innerHeight;
+        this.numberOfGhosts = Math.round((this.width + this.height) / 200);
+        this.ghosts = [];
+        this.initializeGhosts();
+    }
+
+    // Crea objetos de tipo Ghost en posiciones aleatorias
+    initializeGhosts() {
+        for (let i = 0; i < this.numberOfGhosts; i++) {
+            let ghost = new Ghost(
+                getRandomInt(0, this.width),
+                getRandomInt(0, this.height),
+                this.context
+            );
+            ghost.initialize();
+            this.ghosts.push(ghost);
+        }
+    }
+
+    // Actualiza la posiciÃ³n y movimiento de cada fantasma
+    update() {
+        for (let i = 0; i < this.ghosts.length; i++) {
+            this.ghosts[i].update(this.mousePosition);
+        }
+    }
+
+    // Dibuja los fantasmas en el canvas
+    render() {
+        this.context.clearRect(0, 0, this.width, this.height);
+        for (let i = 0; i < this.ghosts.length; i++) {
+            this.ghosts[i].render(this.context);
+        }
+    }
+
+    // Bucle principal de animaciÃ³n (60 fps aprox.)
+    loop() {
+        this.update();
+        this.render();
+        window.requestAnimationFrame(() => this.loop());
+    }
+
+    // Actualiza la posiciÃ³n del mouse
+    mouseMove(event) {
+        this.mousePosition = { x: event.clientX, y: event.clientY };
+    }
+
+    // Actualiza la posiciÃ³n en pantallas tÃ¡ctiles
+    touchMove(event) {
+        event.preventDefault();
+        this.mousePosition = {
+            x: event.touches[0].clientX,
+            y: event.touches[0].clientY
+        };
+    }
+}
+
+// Clase que representa a cada fantasma
+class Ghost {
+    constructor(x, y, context) {
+        this.position = new Vector2D(x, y);
+        this.handPosition = new Vector2D(x, y);
+        this.context = context;
+
+        this.radius = 50;
+        this.eyeDistance = 10;
+        this.eyes = [];
+        this.bodyBounceAngle = getRandomInt(0, 100);
+        this.bounceDistance = 0.5;
+        this.bounceSpeed = 0.05;
+
+        // Velocidad y direcciÃ³n aleatoria
+        this.velocity = new Vector2D(0, 0);
+        this.velocity.setLength(Math.random() * 2 + 1);
+        this.velocity.setAngle(Math.random() * TWO_PI);
+    }
+
+    // Crea los dos ojos del fantasma
+    initialize() {
+        this.eyes.push(new Eye(this.position.getX() - this.eyeDistance, this.position.getY() - 10));
+        this.eyes.push(new Eye(this.position.getX() + this.eyeDistance, this.position.getY() - 10));
+    }
+
+    // Actualiza la posiciÃ³n y direcciÃ³n del fantasma
+    update(mousePosition) {
+        if (Math.random() < 0.01) {
+            this.velocity.setLength(Math.random() * 2 + 1);
+            this.velocity.setAngle(Math.random() * TWO_PI);
+        }
+
+        // Movimiento flotante suave (rebote)
+        let bodyBounce = new Vector2D(0, Math.sin(this.bodyBounceAngle) * this.bounceDistance);
+        let handBounce = new Vector2D(0, Math.sin(this.bodyBounceAngle + 10) * this.bounceDistance / 2);
+        this.position.addTo(bodyBounce);
+        this.handPosition.subtractFrom(handBounce);
+
+        // Los ojos siguen el cursor del usuario
+        let dx = mousePosition.x - this.position.getX();
+        let dy = mousePosition.y - this.position.getY();
+        let angle = Math.atan2(dy, dx);
+
+        for (let i = 0; i < this.eyes.length; i++) {
+            this.eyes[i].update(bodyBounce, angle);
+        }
+
+        this.bodyBounceAngle += this.bounceSpeed;
+    }
+
+    // Dibuja el cuerpo y las manos del fantasma
+    render() {
+        this.context.fillStyle = "#ffffff";
+        this.context.beginPath();
+        this.context.arc(this.position.getX(), this.position.getY(), this.radius, 0, TWO_PI);
+        this.context.fill();
+
+        this.context.beginPath();
+        this.context.arc(this.handPosition.getX() - this.radius + 5, this.handPosition.getY() + 10, 10, 0, TWO_PI);
+        this.context.fill();
+
+        this.context.beginPath();
+        this.context.arc(this.handPosition.getX() + this.radius - 5, this.handPosition.getY() + 10, 10, 0, TWO_PI);
+        this.context.fill();
+
+        for (let i = 0; i < this.eyes.length; i++) {
+            this.eyes[i].render(this.context);
+        }
+    }
+}
+
+// Clase para representar los ojos del fantasma
+class Eye {
+    constructor(x, y) {
+        this.position = new Vector2D(x, y);
+        this.irisPosition = new Vector2D(x, y);
+        this.moveRadius = 20;
+        this.sizeRadius = 5;
+    }
+
+    // Actualiza la posiciÃ³n del iris dentro del ojo
+    update(velocity, angle) {
+        this.position.addTo(velocity);
+        this.irisPosition.setX(this.position.getX() + Math.cos(angle) * this.moveRadius);
+        this.irisPosition.setY(this.position.getY() + Math.sin(angle) * this.moveRadius);
+    }
+
+    // Dibuja el ojo
+    render(context) {
+        context.fillStyle = "#000000";
+        context.beginPath();
+        context.arc(this.irisPosition.getX(), this.irisPosition.getY(), this.sizeRadius, 0, TWO_PI);
+        context.fill();
+    }
+}
+
+// Clase para manejar posiciones y movimientos en 2D
+class Vector2D {
+    constructor(x, y) {
+        this._x = x;
+        this._y = y;
+    }
+    setX(x) { this._x = x; }
+    setY(y) { this._y = y; }
+    getX() { return this._x; }
+    getY() { return this._y; }
+    setAngle(angle) {
+        let length = this.getLength();
+        this._x = Math.cos(angle) * length;
+        this._y = Math.sin(angle) * length;
+    }
+    getAngle() { return Math.atan2(this._y, this._x); }
+    setLength(length) {
+        let angle = this.getAngle();
+        this._x = Math.cos(angle) * length;
+        this._y = Math.sin(angle) * length;
+    }
+    getLength() { return Math.sqrt(this._x * this._x + this._y * this._y); }
+    addTo(v2) { this._x += v2.getX(); this._y += v2.getY(); }
+    subtractFrom(v2) { this._x -= v2.getX(); this._y -= v2.getY(); }
+}
+
+// Inicia la aplicaciÃ³n al cargar la pÃ¡gina
+window.onload = function () {
+    const application = new Application();
+    application.initializeGhosts();
+    application.loop();
+};
+</script>
+</body>
+</html>
