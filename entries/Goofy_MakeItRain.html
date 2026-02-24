@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xat Background</title>
+
+    <style>
+        /* Full Page Gradient Animation */
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #533483);
+            background-size: 400% 400%;
+            animation: gradientAnimation 10s ease infinite;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Floating Avatars */
+        .avatar {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-image: url('https://wiki.xat.com/w/images/0/0d/Planet_Xatframe.png');
+            background-size: cover;
+            opacity: 0.8;
+            pointer-events: none;
+            animation: floatAvatar 5s linear infinite;
+        }
+
+        /* Floating Downwards Effect */
+        @keyframes floatAvatar {
+            0% {
+                transform: translateY(-100px) scale(0.8) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(110vh) scale(1.2) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Dynamic Chat Text */
+        #chatText {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 80px;
+            font-weight: bold;
+            text-shadow: 4px 4px 20px rgba(0, 0, 0, 0.7);
+            animation: pulse 2s ease-in-out infinite;
+            opacity: 0;
+        }
+
+        /* Text Animation */
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Dynamic Chat Name -->
+    <div id="chatText"></div>
+
+    <script>
+        function getCustomQueryParams() {
+            const query = window.location.search.substring(1);
+            let params = { chat: null, color: "#FFFFFF" };
+
+            if (query) {
+                const parts = query.split("_");
+                parts.forEach(part => {
+                    const [key, value] = part.split("=");
+                    if (key === "chat") {
+                        params.chat = decodeURIComponent(value);
+                    }
+                    if (key === "color") {
+                        params.color = decodeURIComponent(value);
+                        if (!/^#([0-9A-Fa-f]{6})$/.test(params.color)) {
+                            params.color = "#FFFFFF";
+                        }
+                    }
+                });
+            }
+            return params;
+        }
+
+        const { chat, color } = getCustomQueryParams();
+        const chatText = document.getElementById("chatText");
+
+        if (chat) {
+            chatText.textContent = chat;
+            chatText.style.color = color;
+            chatText.style.opacity = "1";
+        }
+
+        function createAvatar() {
+            const avatar = document.createElement("div");
+            avatar.classList.add("avatar");
+
+            avatar.style.left = Math.random() * window.innerWidth + "px";
+            avatar.style.top = "-100px";
+            avatar.style.animationDuration = (Math.random() * 3 + 2) + "s";
+            avatar.style.transform = `scale(${Math.random() * 0.8 + 0.5})`;
+
+            document.body.appendChild(avatar);
+
+            setTimeout(() => { avatar.remove(); }, 5000);
+        }
+
+        setInterval(createAvatar, 300);
+    </script>
+
+</body>
+</html>
