@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xat Rocket2</title>
+    <style>
+        /* ==========================================================================
+           1. RESET & VARIABLES
+           ========================================================================== */
+        :root {
+            --bg-top: #010412;
+            --bg-mid: #06113C;
+            --bg-bottom: #0d2169;
+            --glow-color: rgba(255, 115, 0, 0.6);
+            --rocket-width: 140px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ðŸ”§ CORRECCIÃ“N: Asegurar que el fondo cubra toda el Ã¡rea real */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            min-height: 100vh;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 50%, var(--bg-bottom) 100%);
+            width: 100%;
+            overflow: hidden;
+            overflow-x: hidden; /* Evita cualquier desborde horizontal */
+            font-family: system-ui, -apple-system, sans-serif;
+            background-attachment: fixed;
+        }
+
+        /* ==========================================================================
+           2. ENTORNO ESPACIAL Y EFECTOS
+           ========================================================================== */
+        
+        /* ðŸ”§ CORRECCIÃ“N: Fondo y viÃ±eta fijos para cubrir el 100% de la pantalla sin franjas negras */
+        #starfield {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.85);
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .space-scene {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+        }
+
+        .star {
+            position: absolute;
+            background-color: #ffffff;
+            border-radius: 50%;
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+
+        .streak {
+            position: absolute;
+            width: 2px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0) 100%);
+            border-radius: 50%;
+            will-change: transform;
+        }
+
+        /* ==========================================================================
+           3. ESTRUCTURA Y ANIMACIÃ“N DEL COHETE
+           ========================================================================== */
+        
+        /* Capa 1: Despegue inicial desde abajo */
+        .takeoff-path {
+            position: absolute;
+            z-index: 10;
+            animation: takeoff 3.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            bottom: -50%;
+        }
+
+        /* Capa 2: Ascenso / LevitaciÃ³n continua */
+        .hover-effect {
+            animation: float 4s ease-in-out infinite alternate;
+        }
+
+        /* Capa 3: Micro vibraciÃ³n lateral por potencia del motor */
+        .vibration-effect {
+            animation: vibrate 0.05s linear infinite alternate;
+            filter: drop-shadow(0 0 25px rgba(13, 33, 105, 0.7));
+        }
+
+        /* ==========================================================================
+           4. ESTRUCTURA REQUERIDA: ROCKET WRAPPER
+           ========================================================================== */
+        .rocket-wrapper {
+            position: relative;
+            display: inline-block; /* Asegura que el contenedor abrace exactamente al cohete */
+            width: var(--rocket-width);
+            max-width: 100%;
+        }
+
+        .rocket {
+            width: 100%;
+            height: auto;
+            display: block;
+            position: relative;
+            z-index: 3; /* El cuerpo del cohete arriba */
+        }
+
+        .flame {
+            position: absolute;
+            left: 45%;
+            
+            /* ðŸ”§ CONTROL DE POSICIÃ“N HORIZONTAL */
+            transform: translateX(-50%);
+            
+            bottom: 19%; 
+            width: 35%; /* Ancho ajustado a la nueva proporciÃ³n */
+            transform-origin: top center;
+            z-index: 2; /* Debajo del cohete pero encima del fondo */
+            
+            /* ðŸ”§ CONTROL DE GLOW DEL FUEGO */
+            filter: drop-shadow(0 0 15px rgba(255,140,0,0.8)) drop-shadow(0 0 25px rgba(255,90,0,0.6));
+            
+            animation: flamePulse 0.20s ease-in-out infinite;
+        }
+
+        /* ==========================================================================
+           5. KEYFRAMES
+           ========================================================================== */
+        
+        /* ApariciÃ³n */
+        @keyframes takeoff {
+            0% { bottom: -50%; transform: scale(0.8); }
+            100% { bottom: 35%; transform: scale(1); }
+        }
+
+        /* LevitaciÃ³n */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-20px); }
+        }
+
+        /* Micro-vibraciÃ³n del fuselaje */
+        @keyframes vibrate {
+            0% { transform: translateX(-0.5px); }
+            100% { transform: translateX(0.5px); }
+        }
+
+        /* Llama dinÃ¡mica: pulso, escala Y, y brillo */
+        @keyframes flamePulse {
+            0% { 
+                transform: translateX(-53%) scaleY(1); 
+                filter: brightness(1) drop-shadow(0 0 12px rgba(255,140,0,0.8)) drop-shadow(0 0 25px rgba(255,90,0,0.6));
+            }
+            50% { 
+                transform: translateX(-53%) scaleY(1.15); 
+                filter: brightness(1.15) drop-shadow(0 0 18px rgba(255,150,0,0.9)) drop-shadow(0 0 40px rgba(255,100,0,0.8));
+            }
+            100% { 
+                transform: translateX(-53%) scaleY(1); 
+                filter: brightness(1) drop-shadow(0 0 12px rgba(255,140,0,0.8)) drop-shadow(0 0 25px rgba(255,90,0,0.6));
+            }
+        }
+
+        /* Parallax de estrellas bajando */
+        @keyframes star-fall {
+            0% { transform: translateY(-10vh); opacity: 0; }
+            10% { opacity: var(--star-opacity, 0.8); }
+            90% { opacity: var(--star-opacity, 0.8); }
+            100% { transform: translateY(110vh); opacity: 0; }
+        }
+
+        /* Parpadeo de estrellas */
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.1; }
+            50% { opacity: 1; filter: blur(1px); }
+        }
+
+        /* ==========================================================================
+           6. RESPONSIVE DESIGN
+           ========================================================================== */
+        @media (min-width: 768px) {
+            :root {
+                --rocket-width: 170px;
+            }
+            @keyframes takeoff {
+                0% { bottom: -50%; }
+                100% { bottom: 35%; }
+            }
+        }
+
+        @media (min-width: 1200px) {
+            :root {
+                --rocket-width: 210px;
+            }
+        }
+
+        /* ==========================================================================
+           7. LUNA REALISTA
+           ========================================================================== */
+        .moon {
+            position: fixed;
+            /* ðŸ”§ Ajustado para mantener la relaciÃ³n de distancia con el cohete (+65px) */
+            top: 105px; 
+            right: 40px;
+            width: 150px;
+            height: auto;
+            pointer-events: none;
+            z-index: 2; /* Sobre las estrellas, detrÃ¡s de la viÃ±eta y cohete */
+
+            /* Glow realista */
+            filter: drop-shadow(0 0 20px rgba(255,255,255,0.4))
+                    drop-shadow(0 0 60px rgba(200,220,255,0.25));
+
+            transition: transform 0.6s ease;
+            animation: moonFloat 6s ease-in-out infinite;
+        }
+
+        /* Sutil efecto flotaciÃ³n */
+        @keyframes moonFloat {
+            0%   { transform: translateY(0px); }
+            50%  { transform: translateY(-6px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Responsive de la luna */
+        @media (max-width: 768px) {
+            .moon {
+                width: 110px;
+                top: 90px; /* +65px de su valor original */
+                right: 25px;
+            }
+        }
+
+        /* ==========================================================================
+           8. LOGO XAT - ESTILO PREMIUM
+           ========================================================================== */
+        .xat-logo {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: inline-block;
+            transition: all 0.4s ease;
+            z-index: 100; /* Aseguramos que estÃ© sobre la viÃ±eta y sea clickeable */
+        }
+
+        /* ============================= */
+        /* ðŸš€ LOGO XAT â€“ CONTROL DE TAMAÃ‘O */
+        /* ============================= */
+        .xat-logo img {
+            width: 50px;   
+            height: auto;
+            opacity: 0.85;
+            transition: all 0.4s ease;
+            animation: logoBreathing 3s ease-in-out infinite alternate;
+        }
+
+        /* âœ¨ EFECTO HOVER PROFESIONAL */
+        .xat-logo:hover img {
+            transform: scale(1.08);
+            opacity: 1;
+            filter: drop-shadow(0 0 15px rgba(0, 170, 255, 0.9)) drop-shadow(0 0 35px rgba(0, 140, 255, 0.8));
+            animation: none; 
+        }
+
+        /* âœ¨ KEYFRAME DEL BREATHING GLOW */
+        @keyframes logoBreathing {
+            0% { filter: drop-shadow(0 0 5px rgba(0, 170, 255, 0.3)) drop-shadow(0 0 10px rgba(0, 140, 255, 0.2)); }
+            100% { filter: drop-shadow(0 0 12px rgba(0, 170, 255, 0.7)) drop-shadow(0 0 22px rgba(0, 140, 255, 0.5)); }
+        }
+
+        /* ðŸ“± RESPONSIVE PARA EL LOGO */
+        @media (max-width: 600px) {
+            .xat-logo { bottom: 15px; }
+            .xat-logo img { width: 50px; }
+        }
+
+        /* ==========================================================================
+           9. NUBES CINEMATOGRÃFICAS (EFECTO PARALLAX)
+           ========================================================================== */
+        .cloud-layer {
+            position: fixed;
+            top: 0; 
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1; /* Debajo del cohete y la luna */
+
+            /* ðŸ”¥ Desvanecimiento atmosfÃ©rico superior e inferior (MÃ¡scara) */
+            mask-image: linear-gradient(to top, transparent 0%, black 15%, black 85%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to top, transparent 0%, black 15%, black 85%, transparent 100%);
+        }
+
+        .cloud {
+            position: absolute;
+            top: -400px; 
+            width: 300px;
+            filter: blur(1px) drop-shadow(0 0 25px rgba(255,255,255,0.15));
+            will-change: transform, opacity; 
+        }
+
+        .cloud1 { left: 5%; animation: cloudMove1 18s linear infinite; }
+        .cloud2 { left: 45%; width: 350px; animation: cloudMove2 25s linear infinite; }
+        .cloud3 { left: 70%; width: 280px; animation: cloudMove3 22s linear infinite; }
+
+        @keyframes cloudMove1 {
+            0%   { transform: translateY(0); opacity: 0; }
+            15%  { opacity: 0.8; }
+            85%  { opacity: 0.8; }
+            100% { transform: translateY(150vh); opacity: 0; }
+        }
+
+        @keyframes cloudMove2 {
+            0%   { transform: translateY(0) scale(1); opacity: 0; }
+            15%  { opacity: 0.7; }
+            85%  { opacity: 0.7; }
+            100% { transform: translateY(150vh) scale(1.05); opacity: 0; }
+        }
+
+        @keyframes cloudMove3 {
+            0%   { transform: translateY(0); opacity: 0; }
+            15%  { opacity: 0.85; }
+            85%  { opacity: 0.85; }
+            100% { transform: translateY(150vh); opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .cloud1 { width: 200px; left: -10%; }
+            .cloud2 { width: 250px; left: 30%; }
+            .cloud3 { width: 180px; left: 60%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ELEMENTOS FIJOS GLOBALES: Cubren el 100% inamovibles -->
+    <div id="starfield"></div>
+    <div class="vignette"></div>
+
+    <!-- ðŸŒ• LUNA REALISTA (Fija a la pantalla) -->
+    <img src="https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/a_(moon)_80.png" class="moon" alt="Luna espacial">
+
+    <!-- ðŸŒ« NUBES CINEMATOGRÃFICAS (Fijas a la pantalla) -->
+    <div class="cloud-layer">
+        <img src="https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/nube1.png" class="cloud cloud1" alt="Nube espacial">
+        <img src="https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/nube2.png" class="cloud cloud2" alt="Nube espacial">
+        <img src="https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/nube3.png" class="cloud cloud3" alt="Nube espacial">
+    </div>
+
+    <!-- LOGO XAT (Fijo al inferior) -->
+    <a href="https://xat.com" target="_blank" class="xat-logo">
+        <img src="https://raw.githubusercontent.com/eamxat/Images/20779bdbf03159dd07a0c8f52524fd0545a417e3/xatlogo%20text.svg" alt="xat logo">
+    </a>
+
+    <!-- ðŸ”§ ESPACIADOR TÃ‰CNICO: Aumenta el layout real 65px empujando exclusivamente el cohete hacia abajo -->
+    <div style="height: 65px; width: 100%; flex-shrink: 0; display: block;"></div>
+
+    <!-- CONTENEDOR DEL COHETE -->
+    <div class="space-scene">
+        <div class="takeoff-path">
+            <div class="hover-effect">
+                <div class="vibration-effect">
+                    <div class="rocket-wrapper">
+                        <img src="https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/Cohete3.png" class="rocket" alt="Cohete Espacial">
+                        <img src="https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/fuego2.png" class="flame" alt="PropulsiÃ³n de Fuego">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* Generador optimizado de estrellas y parallax */
+        document.addEventListener('DOMContentLoaded', () => {
+            const starfield = document.getElementById('starfield');
+            const numStars = 150;     
+            const numMidStars = 50;   
+            const numStreaks = 25;    
+
+            const createCosmicElement = (type) => {
+                const el = document.createElement('div');
+                const leftPos = Math.random() * 100; 
+                const delay = Math.random() * -20;   
+                
+                if (type === 'star') {
+                    const size = Math.random() * 2 + 1;
+                    const duration = Math.random() * 12 + 8; 
+                    const opacity = Math.random() * 0.5 + 0.3;
+                    
+                    el.className = 'star';
+                    el.style.width = `${size}px`;
+                    el.style.height = `${size}px`;
+                    el.style.left = `${leftPos}vw`;
+                    el.style.setProperty('--star-opacity', opacity);
+                    el.style.animation = `star-fall ${duration}s linear ${delay}s infinite, twinkle ${Math.random() * 4 + 2}s ease-in-out infinite`;
+                    
+                } else if (type === 'mid-star') {
+                    const size = Math.random() * 3 + 2;
+                    const duration = Math.random() * 4 + 4; 
+                    
+                    el.className = 'star';
+                    el.style.width = `${size}px`;
+                    el.style.height = `${size}px`;
+                    el.style.left = `${leftPos}vw`;
+                    el.style.setProperty('--star-opacity', 0.8);
+                    el.style.animation = `star-fall ${duration}s linear ${delay}s infinite`;
+                    el.style.boxShadow = `0 0 ${size*2}px rgba(255, 255, 255, 0.8)`;
+                    
+                } else if (type === 'streak') {
+                    const height = Math.random() * 40 + 20;
+                    const duration = Math.random() * 1.2 + 0.4; 
+                    
+                    el.className = 'streak';
+                    el.style.height = `${height}px`;
+                    el.style.left = `${leftPos}vw`;
+                    el.style.setProperty('--star-opacity', Math.random() * 0.4 + 0.1);
+                    el.style.animation = `star-fall ${duration}s linear ${delay}s infinite`;
+                }
+
+                starfield.appendChild(el);
+            };
+
+            for (let i = 0; i < numStars; i++) createCosmicElement('star');
+            for (let i = 0; i < numMidStars; i++) createCosmicElement('mid-star');
+            for (let i = 0; i < numStreaks; i++) createCosmicElement('streak');
+        });
+
+        /* ==========================================================================
+           ðŸ”’ PROTECCIÃ“N BÃSICA DEL CÃ“DIGO FUENTE (ANTI-INSPECCIÃ“N)
+           ========================================================================== */
+        
+        // 1. Bloquear clic derecho (menÃº contextual en PC y pulsaciÃ³n larga en mÃ³viles)
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+
+        // 2. Bloquear teclas y combinaciones de herramientas de desarrollador
+        document.addEventListener('keydown', (e) => {
+            // Bloquear tecla F12
+            if (e.key === 'F12' || e.keyCode === 123) {
+                e.preventDefault();
+                return false;
+            }
+
+            // DetecciÃ³n de teclas combinadas con Ctrl (Windows/Linux) o Cmd (Mac)
+            if (e.ctrlKey || e.metaKey) {
+                const key = e.key ? e.key.toLowerCase() : '';
+                const keyCode = e.keyCode;
+
+                // Bloquear Ctrl+U / Cmd+U (Ver cÃ³digo fuente) y Ctrl+S / Cmd+S (Guardar pÃ¡gina)
+                if (key === 'u' || keyCode === 85 || key === 's' || keyCode === 83) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Bloquear combinaciones especÃ­ficas con Shift (Ctrl+Shift+...)
+                if (e.shiftKey) {
+                    // I (Inspector), J (Consola), C (Seleccionar Elemento)
+                    if (
+                        key === 'i' || keyCode === 73 ||
+                        key === 'j' || keyCode === 74 ||
+                        key === 'c' || keyCode === 67
+                    ) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
