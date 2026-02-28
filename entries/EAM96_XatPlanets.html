@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Xat Planets</title>
+    <link rel="icon" type="image/svg+xml" href="https://raw.githubusercontent.com/eamxat/Images/a4f50d39d3de6271b50c3748b6087692eab532e2/ablogo.svg">
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/eamxat/Images/a4f50d39d3de6271b50c3748b6087692eab532e2/ablogo.svg">
+    <style>
+        /* =========================================
+           1. RESET Y CONFIGURACIÃ“N BASE
+           ========================================= */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            height: 100dvh; 
+            overscroll-behavior: none; 
+            overflow: hidden;
+            background: radial-gradient(ellipse at bottom, #07143A 0%, #03081a 60%, #010208 100%);
+            background-attachment: fixed;
+            font-family: sans-serif;
+        }
+
+        .space-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            perspective: 1000px;
+            -webkit-perspective: 1000px; 
+        }
+
+        /* =========================================
+           2. EL LIENZO GIGANTE (ESTÃTICO Y DENSO)
+           ========================================= */
+        .stars-wrapper {
+            position: absolute;
+            width: 300vw; 
+            height: 300vh;
+            top: -100vh; 
+            left: -100vw; 
+            transform-origin: 50% 50%;
+            -webkit-transform-origin: 50% 50%;
+            will-change: transform;
+            
+            background-image: 
+                radial-gradient(1px 1px at 25px 35px, rgba(255,255,255,0.9), rgba(255,255,255,0)),
+                radial-gradient(1.5px 1.5px at 125px 145px, rgba(224,240,255,0.7), rgba(224,240,255,0)),
+                radial-gradient(1px 1px at 250px 85px, rgba(255,240,224,0.8), rgba(255,240,224,0)),
+                radial-gradient(2px 2px at 320px 280px, rgba(255,255,255,0.6), rgba(255,255,255,0)),
+                radial-gradient(1px 1px at 410px 420px, rgba(224,240,255,0.9), rgba(224,240,255,0)),
+                radial-gradient(1px 1px at 45px 85px, rgba(255,255,255,0.7), rgba(255,255,255,0)),
+                radial-gradient(1.5px 1.5px at 165px 225px, rgba(255,240,224,0.6), rgba(255,240,224,0)),
+                radial-gradient(1px 1px at 285px 45px, rgba(224,240,255,0.8), rgba(224,240,255,0)),
+                radial-gradient(1px 1px at 30px 110px, rgba(255,255,255,1), rgba(255,255,255,0)),
+                radial-gradient(1.2px 1.2px at 110px 160px, rgba(224,240,255,0.7), rgba(224,240,255,0)),
+                radial-gradient(1.5px 1.5px at 180px 20px, rgba(255,240,224,0.6), rgba(255,240,224,0));
+            background-size: 
+                513px 513px, 513px 513px, 513px 513px, 513px 513px, 513px 513px,
+                317px 317px, 317px 317px, 317px 317px,
+                199px 199px, 199px 199px, 199px 199px;
+            background-repeat: repeat;
+        }
+
+        .stars-wrapper.slow-spin {
+            background-image: 
+                radial-gradient(1px 1px at 60px 40px, rgba(255,255,255,0.6), rgba(255,255,255,0)),
+                radial-gradient(1.5px 1.5px at 180px 210px, rgba(224,240,255,0.5), rgba(224,240,255,0)),
+                radial-gradient(1px 1px at 310px 90px, rgba(255,240,224,0.6), rgba(255,240,224,0)),
+                radial-gradient(1px 1px at 420px 310px, rgba(255,255,255,0.4), rgba(255,255,255,0)),
+                radial-gradient(1px 1px at 90px 150px, rgba(224,240,255,0.7), rgba(224,240,255,0)),
+                radial-gradient(2px 2px at 230px 50px, rgba(255,240,224,0.5), rgba(255,240,224,0));
+            background-size: 
+                461px 461px, 461px 461px, 461px 461px, 461px 461px,
+                277px 277px, 277px 277px;
+            background-repeat: repeat;
+        }
+
+        .stars {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            will-change: transform;
+        }
+
+        .stars::after, .stars::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            box-shadow: inherit;
+            border-radius: inherit;
+        }
+        .stars::after { transform: rotate(120deg); }
+        .stars::before { transform: rotate(240deg); }
+
+        /* =========================================
+           3. CAMPOS ESTELARES (DENSIDAD BOX-SHADOW)
+           ========================================= */
+
+        .small {
+            width: 1px; height: 1px; border-radius: 50%;
+            box-shadow: 
+                2vw 10vh rgba(255,255,255,0.4), 5vw 45vh rgba(255,255,255,0.6), 8vw 80vh rgba(255,255,255,0.3), 12vw 15vh rgba(255,255,255,0.5), 15vw 60vh rgba(255,255,255,0.8), 18vw 90vh rgba(255,255,255,0.4), 22vw 25vh rgba(255,255,255,0.7), 25vw 70vh rgba(255,255,255,0.5), 28vw 5vh rgba(255,255,255,0.6), 32vw 50vh rgba(255,255,255,0.4), 35vw 85vh rgba(255,255,255,0.9), 38vw 35vh rgba(255,255,255,0.5), 42vw 75vh rgba(255,255,255,0.8), 45vw 12vh rgba(255,255,255,0.4), 48vw 65vh rgba(255,255,255,0.6),
+                3vw 110vh rgba(255,255,255,0.5), 7vw 140vh rgba(255,255,255,0.7), 11vw 175vh rgba(255,255,255,0.4), 14vw 120vh rgba(255,255,255,0.6), 17vw 165vh rgba(255,255,255,0.8), 21vw 185vh rgba(255,255,255,0.3), 24vw 130vh rgba(255,255,255,0.9), 27vw 155vh rgba(255,255,255,0.5), 31vw 195vh rgba(255,255,255,0.6), 34vw 115vh rgba(255,255,255,0.4), 37vw 145vh rgba(255,255,255,0.8), 41vw 180vh rgba(255,255,255,0.5), 44vw 125vh rgba(255,255,255,0.7), 47vw 160vh rgba(255,255,255,0.4), 50vw 190vh rgba(255,255,255,0.6),
+                1vw 215vh rgba(255,255,255,0.6), 6vw 250vh rgba(255,255,255,0.4), 9vw 285vh rgba(255,255,255,0.8), 13vw 225vh rgba(255,255,255,0.5), 16vw 260vh rgba(255,255,255,0.7), 19vw 295vh rgba(255,255,255,0.4), 23vw 210vh rgba(255,255,255,0.9), 26vw 240vh rgba(255,255,255,0.6), 29vw 280vh rgba(255,255,255,0.5), 33vw 230vh rgba(255,255,255,0.8), 36vw 270vh rgba(255,255,255,0.4), 39vw 290vh rgba(255,255,255,0.7), 43vw 220vh rgba(255,255,255,0.5), 46vw 255vh rgba(255,255,255,0.6), 49vw 285vh rgba(255,255,255,0.9),
+                52vw 18vh rgba(255,255,255,0.4), 55vw 55vh rgba(255,255,255,0.7), 58vw 88vh rgba(255,255,255,0.3), 62vw 22vh rgba(255,255,255,0.5), 65vw 68vh rgba(255,255,255,0.8), 68vw 98vh rgba(255,255,255,0.4), 72vw 32vh rgba(255,255,255,0.7), 75vw 78vh rgba(255,255,255,0.5), 78vw 15vh rgba(255,255,255,0.6), 82vw 58vh rgba(255,255,255,0.4), 85vw 92vh rgba(255,255,255,0.9), 88vw 42vh rgba(255,255,255,0.5), 92vw 82vh rgba(255,255,255,0.8), 95vw 20vh rgba(255,255,255,0.4), 98vw 72vh rgba(255,255,255,0.6),
+                53vw 118vh rgba(255,255,255,0.5), 57vw 148vh rgba(255,255,255,0.7), 61vw 182vh rgba(255,255,255,0.4), 64vw 128vh rgba(255,255,255,0.6), 67vw 172vh rgba(255,255,255,0.8), 71vw 192vh rgba(255,255,255,0.3), 74vw 138vh rgba(255,255,255,0.9), 77vw 162vh rgba(255,255,255,0.5), 81vw 198vh rgba(255,255,255,0.6), 84vw 122vh rgba(255,255,255,0.4), 87vw 152vh rgba(255,255,255,0.8), 91vw 188vh rgba(255,255,255,0.5), 94vw 132vh rgba(255,255,255,0.7), 97vw 168vh rgba(255,255,255,0.4), 99vw 195vh rgba(255,255,255,0.6),
+                51vw 222vh rgba(255,255,255,0.6), 56vw 258vh rgba(255,255,255,0.4), 59vw 292vh rgba(255,255,255,0.8), 63vw 232vh rgba(255,255,255,0.5), 66vw 268vh rgba(255,255,255,0.7), 69vw 298vh rgba(255,255,255,0.4), 73vw 218vh rgba(255,255,255,0.9), 76vw 248vh rgba(255,255,255,0.6), 79vw 288vh rgba(255,255,255,0.5), 83vw 238vh rgba(255,255,255,0.8), 86vw 278vh rgba(255,255,255,0.4), 89vw 295vh rgba(255,255,255,0.7), 93vw 228vh rgba(255,255,255,0.5), 96vw 262vh rgba(255,255,255,0.6), 99vw 292vh rgba(255,255,255,0.9),
+                102vw 10vh rgba(255,255,255,0.4), 105vw 45vh rgba(255,255,255,0.6), 108vw 80vh rgba(255,255,255,0.3), 112vw 15vh rgba(255,255,255,0.5), 115vw 60vh rgba(255,255,255,0.8), 118vw 90vh rgba(255,255,255,0.4), 122vw 25vh rgba(255,255,255,0.7), 125vw 70vh rgba(255,255,255,0.5), 128vw 5vh rgba(255,255,255,0.6), 132vw 50vh rgba(255,255,255,0.4), 135vw 85vh rgba(255,255,255,0.9), 138vw 35vh rgba(255,255,255,0.5), 142vw 75vh rgba(255,255,255,0.8), 145vw 12vh rgba(255,255,255,0.4), 148vw 65vh rgba(255,255,255,0.6),
+                103vw 110vh rgba(255,255,255,0.5), 107vw 140vh rgba(255,255,255,0.7), 111vw 175vh rgba(255,255,255,0.4), 114vw 120vh rgba(255,255,255,0.6), 117vw 165vh rgba(255,255,255,0.8), 121vw 185vh rgba(255,255,255,0.3), 124vw 130vh rgba(255,255,255,0.9), 127vw 155vh rgba(255,255,255,0.5), 131vw 195vh rgba(255,255,255,0.6), 134vw 115vh rgba(255,255,255,0.4), 137vw 145vh rgba(255,255,255,0.8), 141vw 180vh rgba(255,255,255,0.5), 144vw 125vh rgba(255,255,255,0.7), 147vw 160vh rgba(255,255,255,0.4), 150vw 190vh rgba(255,255,255,0.6),
+                101vw 215vh rgba(255,255,255,0.6), 106vw 250vh rgba(255,255,255,0.4), 109vw 285vh rgba(255,255,255,0.8), 113vw 225vh rgba(255,255,255,0.5), 116vw 260vh rgba(255,255,255,0.7), 119vw 295vh rgba(255,255,255,0.4), 123vw 210vh rgba(255,255,255,0.9), 126vw 240vh rgba(255,255,255,0.6), 129vw 280vh rgba(255,255,255,0.5), 133vw 230vh rgba(255,255,255,0.8), 136vw 270vh rgba(255,255,255,0.4), 139vw 290vh rgba(255,255,255,0.7), 143vw 220vh rgba(255,255,255,0.5), 146vw 255vh rgba(255,255,255,0.6), 149vw 285vh rgba(255,255,255,0.9),
+                152vw 18vh rgba(255,255,255,0.4), 155vw 55vh rgba(255,255,255,0.7), 158vw 88vh rgba(255,255,255,0.3), 162vw 22vh rgba(255,255,255,0.5), 165vw 68vh rgba(255,255,255,0.8), 168vw 98vh rgba(255,255,255,0.4), 172vw 32vh rgba(255,255,255,0.7), 175vw 78vh rgba(255,255,255,0.5), 178vw 15vh rgba(255,255,255,0.6), 182vw 58vh rgba(255,255,255,0.4), 185vw 92vh rgba(255,255,255,0.9), 188vw 42vh rgba(255,255,255,0.5), 192vw 82vh rgba(255,255,255,0.8), 195vw 20vh rgba(255,255,255,0.4), 198vw 72vh rgba(255,255,255,0.6),
+                153vw 118vh rgba(255,255,255,0.5), 157vw 148vh rgba(255,255,255,0.7), 161vw 182vh rgba(255,255,255,0.4), 164vw 128vh rgba(255,255,255,0.6), 167vw 172vh rgba(255,255,255,0.8), 171vw 192vh rgba(255,255,255,0.3), 174vw 138vh rgba(255,255,255,0.9), 177vw 162vh rgba(255,255,255,0.5), 181vw 198vh rgba(255,255,255,0.6), 184vw 122vh rgba(255,255,255,0.4), 187vw 152vh rgba(255,255,255,0.8), 191vw 188vh rgba(255,255,255,0.5), 194vw 132vh rgba(255,255,255,0.7), 197vw 168vh rgba(255,255,255,0.4), 199vw 195vh rgba(255,255,255,0.6),
+                151vw 222vh rgba(255,255,255,0.6), 156vw 258vh rgba(255,255,255,0.4), 159vw 292vh rgba(255,255,255,0.8), 163vw 232vh rgba(255,255,255,0.5), 166vw 268vh rgba(255,255,255,0.7), 169vw 298vh rgba(255,255,255,0.4), 173vw 218vh rgba(255,255,255,0.9), 176vw 248vh rgba(255,255,255,0.6), 179vw 288vh rgba(255,255,255,0.5), 183vw 238vh rgba(255,255,255,0.8), 186vw 278vh rgba(255,255,255,0.4), 189vw 295vh rgba(255,255,255,0.7), 193vw 228vh rgba(255,255,255,0.5), 196vw 262vh rgba(255,255,255,0.6), 199vw 292vh rgba(255,255,255,0.9),
+                202vw 10vh rgba(255,255,255,0.4), 205vw 45vh rgba(255,255,255,0.6), 208vw 80vh rgba(255,255,255,0.3), 212vw 15vh rgba(255,255,255,0.5), 215vw 60vh rgba(255,255,255,0.8), 218vw 90vh rgba(255,255,255,0.4), 222vw 25vh rgba(255,255,255,0.7), 225vw 70vh rgba(255,255,255,0.5), 228vw 5vh rgba(255,255,255,0.6), 232vw 50vh rgba(255,255,255,0.4), 235vw 85vh rgba(255,255,255,0.9), 238vw 35vh rgba(255,255,255,0.5), 242vw 75vh rgba(255,255,255,0.8), 245vw 12vh rgba(255,255,255,0.4), 248vw 65vh rgba(255,255,255,0.6),
+                203vw 110vh rgba(255,255,255,0.5), 207vw 140vh rgba(255,255,255,0.7), 211vw 175vh rgba(255,255,255,0.4), 214vw 120vh rgba(255,255,255,0.6), 217vw 165vh rgba(255,255,255,0.8), 221vw 185vh rgba(255,255,255,0.3), 224vw 130vh rgba(255,255,255,0.9), 227vw 155vh rgba(255,255,255,0.5), 231vw 195vh rgba(255,255,255,0.6), 234vw 115vh rgba(255,255,255,0.4), 237vw 145vh rgba(255,255,255,0.8), 241vw 180vh rgba(255,255,255,0.5), 244vw 125vh rgba(255,255,255,0.7), 247vw 160vh rgba(255,255,255,0.4), 250vw 190vh rgba(255,255,255,0.6),
+                201vw 215vh rgba(255,255,255,0.6), 206vw 250vh rgba(255,255,255,0.4), 209vw 285vh rgba(255,255,255,0.8), 213vw 225vh rgba(255,255,255,0.5), 216vw 260vh rgba(255,255,255,0.7), 219vw 295vh rgba(255,255,255,0.4), 223vw 210vh rgba(255,255,255,0.9), 226vw 240vh rgba(255,255,255,0.6), 229vw 280vh rgba(255,255,255,0.5), 233vw 230vh rgba(255,255,255,0.8), 236vw 270vh rgba(255,255,255,0.4), 239vw 290vh rgba(255,255,255,0.7), 243vw 220vh rgba(255,255,255,0.5), 246vw 255vh rgba(255,255,255,0.6), 249vw 285vh rgba(255,255,255,0.9),
+                252vw 18vh rgba(255,255,255,0.4), 255vw 55vh rgba(255,255,255,0.7), 258vw 88vh rgba(255,255,255,0.3), 262vw 22vh rgba(255,255,255,0.5), 265vw 68vh rgba(255,255,255,0.8), 268vw 98vh rgba(255,255,255,0.4), 272vw 32vh rgba(255,255,255,0.7), 275vw 78vh rgba(255,255,255,0.5), 278vw 15vh rgba(255,255,255,0.6), 282vw 58vh rgba(255,255,255,0.4), 285vw 92vh rgba(255,255,255,0.9), 288vw 42vh rgba(255,255,255,0.5), 292vw 82vh rgba(255,255,255,0.8), 295vw 20vh rgba(255,255,255,0.4), 298vw 72vh rgba(255,255,255,0.6),
+                253vw 118vh rgba(255,255,255,0.5), 257vw 148vh rgba(255,255,255,0.7), 261vw 182vh rgba(255,255,255,0.4), 264vw 128vh rgba(255,255,255,0.6), 267vw 172vh rgba(255,255,255,0.8), 271vw 192vh rgba(255,255,255,0.3), 274vw 138vh rgba(255,255,255,0.9), 277vw 162vh rgba(255,255,255,0.5), 281vw 198vh rgba(255,255,255,0.6), 284vw 122vh rgba(255,255,255,0.4), 287vw 152vh rgba(255,255,255,0.8), 291vw 188vh rgba(255,255,255,0.5), 294vw 132vh rgba(255,255,255,0.7), 297vw 168vh rgba(255,255,255,0.4), 299vw 195vh rgba(255,255,255,0.6),
+                251vw 222vh rgba(255,255,255,0.6), 256vw 258vh rgba(255,255,255,0.4), 259vw 292vh rgba(255,255,255,0.8), 263vw 232vh rgba(255,255,255,0.5), 266vw 268vh rgba(255,255,255,0.7), 269vw 298vh rgba(255,255,255,0.4), 273vw 218vh rgba(255,255,255,0.9), 276vw 248vh rgba(255,255,255,0.6), 279vw 288vh rgba(255,255,255,0.5), 283vw 238vh rgba(255,255,255,0.8), 286vw 278vh rgba(255,255,255,0.4), 289vw 295vh rgba(255,255,255,0.7), 293vw 228vh rgba(255,255,255,0.5), 296vw 262vh rgba(255,255,255,0.6), 299vw 292vh rgba(255,255,255,0.9);
+            animation: twinkleSmall 4s ease-in-out infinite alternate;
+            -webkit-animation: twinkleSmall 4s ease-in-out infinite alternate;
+        }
+
+        .medium {
+            width: 1px; height: 1px; border-radius: 50%;
+            box-shadow: 
+                4vw 20vh rgba(224, 240, 255, 0.8), 10vw 60vh #FFF, 16vw 10vh rgba(255, 255, 255, 0.7), 22vw 85vh rgba(255, 240, 224, 0.9), 28vw 35vh #FFF, 34vw 75vh rgba(224, 240, 255, 0.8), 40vw 25vh #FFF, 46vw 90vh rgba(255, 255, 255, 0.6), 52vw 50vh rgba(255, 240, 224, 0.8), 58vw 5vh #FFF, 64vw 45vh rgba(224, 240, 255, 0.8), 70vw 80vh #FFF, 76vw 15vh rgba(255, 255, 255, 0.7), 82vw 65vh rgba(255, 240, 224, 0.9), 88vw 30vh #FFF, 94vw 95vh rgba(224, 240, 255, 0.8),
+                104vw 20vh rgba(224, 240, 255, 0.8), 110vw 60vh #FFF, 116vw 10vh rgba(255, 255, 255, 0.7), 122vw 85vh rgba(255, 240, 224, 0.9), 128vw 35vh #FFF, 134vw 75vh rgba(224, 240, 255, 0.8), 140vw 25vh #FFF, 146vw 90vh rgba(255, 255, 255, 0.6), 152vw 50vh rgba(255, 240, 224, 0.8), 158vw 5vh #FFF, 164vw 45vh rgba(224, 240, 255, 0.8), 170vw 80vh #FFF, 176vw 15vh rgba(255, 255, 255, 0.7), 182vw 65vh rgba(255, 240, 224, 0.9), 188vw 30vh #FFF, 194vw 95vh rgba(224, 240, 255, 0.8),
+                204vw 20vh rgba(224, 240, 255, 0.8), 210vw 60vh #FFF, 216vw 10vh rgba(255, 255, 255, 0.7), 222vw 85vh rgba(255, 240, 224, 0.9), 228vw 35vh #FFF, 234vw 75vh rgba(224, 240, 255, 0.8), 240vw 25vh #FFF, 246vw 90vh rgba(255, 255, 255, 0.6), 252vw 50vh rgba(255, 240, 224, 0.8), 258vw 5vh #FFF, 264vw 45vh rgba(224, 240, 255, 0.8), 270vw 80vh #FFF, 276vw 15vh rgba(255, 255, 255, 0.7), 282vw 65vh rgba(255, 240, 224, 0.9), 288vw 30vh #FFF, 294vw 95vh rgba(224, 240, 255, 0.8),
+                2vw 120vh #FFF, 8vw 180vh rgba(255, 255, 255, 0.7), 14vw 135vh rgba(224, 240, 255, 0.9), 20vw 195vh #FFF, 26vw 115vh rgba(255, 240, 224, 0.8), 32vw 165vh #FFF, 38vw 105vh rgba(255, 255, 255, 0.6), 44vw 155vh rgba(224, 240, 255, 0.8), 50vw 185vh #FFF, 56vw 145vh rgba(255, 240, 224, 0.9), 62vw 125vh #FFF, 68vw 175vh rgba(255, 255, 255, 0.7), 74vw 110vh rgba(224, 240, 255, 0.9), 80vw 190vh #FFF, 86vw 150vh rgba(255, 240, 224, 0.8), 92vw 170vh #FFF, 98vw 130vh rgba(255, 255, 255, 0.6),
+                102vw 120vh #FFF, 108vw 180vh rgba(255, 255, 255, 0.7), 114vw 135vh rgba(224, 240, 255, 0.9), 120vw 195vh #FFF, 126vw 115vh rgba(255, 240, 224, 0.8), 132vw 165vh #FFF, 138vw 105vh rgba(255, 255, 255, 0.6), 144vw 155vh rgba(224, 240, 255, 0.8), 150vw 185vh #FFF, 156vw 145vh rgba(255, 240, 224, 0.9), 162vw 125vh #FFF, 168vw 175vh rgba(255, 255, 255, 0.7), 174vw 110vh rgba(224, 240, 255, 0.9), 180vw 190vh #FFF, 186vw 150vh rgba(255, 240, 224, 0.8), 192vw 170vh #FFF, 198vw 130vh rgba(255, 255, 255, 0.6),
+                202vw 120vh #FFF, 208vw 180vh rgba(255, 255, 255, 0.7), 214vw 135vh rgba(224, 240, 255, 0.9), 220vw 195vh #FFF, 226vw 115vh rgba(255, 240, 224, 0.8), 232vw 165vh #FFF, 238vw 105vh rgba(255, 255, 255, 0.6), 244vw 155vh rgba(224, 240, 255, 0.8), 250vw 185vh #FFF, 256vw 145vh rgba(255, 240, 224, 0.9), 262vw 125vh #FFF, 268vw 175vh rgba(255, 255, 255, 0.7), 274vw 110vh rgba(224, 240, 255, 0.9), 280vw 190vh #FFF, 286vw 150vh rgba(255, 240, 224, 0.8), 292vw 170vh #FFF, 298vw 130vh rgba(255, 255, 255, 0.6),
+                3vw 230vh rgba(255, 255, 255, 0.7), 9vw 275vh #FFF, 15vw 215vh rgba(224, 240, 255, 0.8), 21vw 265vh rgba(255, 240, 224, 0.9), 27vw 225vh #FFF, 33vw 290vh rgba(255, 255, 255, 0.6), 39vw 240vh rgba(224, 240, 255, 0.8), 45vw 285vh #FFF, 51vw 210vh rgba(255, 240, 224, 0.7), 57vw 255vh #FFF, 63vw 220vh rgba(255, 255, 255, 0.7), 69vw 280vh #FFF, 75vw 235vh rgba(224, 240, 255, 0.8), 81vw 260vh rgba(255, 240, 224, 0.9), 87vw 295vh #FFF, 93vw 245vh rgba(255, 255, 255, 0.6), 99vw 218vh rgba(224, 240, 255, 0.8),
+                103vw 230vh rgba(255, 255, 255, 0.7), 109vw 275vh #FFF, 115vw 215vh rgba(224, 240, 255, 0.8), 121vw 265vh rgba(255, 240, 224, 0.9), 127vw 225vh #FFF, 133vw 290vh rgba(255, 255, 255, 0.6), 139vw 240vh rgba(224, 240, 255, 0.8), 145vw 285vh #FFF, 151vw 210vh rgba(255, 240, 224, 0.7), 157vw 255vh #FFF, 163vw 220vh rgba(255, 255, 255, 0.7), 169vw 280vh #FFF, 175vw 235vh rgba(224, 240, 255, 0.8), 181vw 260vh rgba(255, 240, 224, 0.9), 187vw 295vh #FFF, 193vw 245vh rgba(255, 255, 255, 0.6), 199vw 218vh rgba(224, 240, 255, 0.8),
+                203vw 230vh rgba(255, 255, 255, 0.7), 209vw 275vh #FFF, 215vw 215vh rgba(224, 240, 255, 0.8), 221vw 265vh rgba(255, 240, 224, 0.9), 227vw 225vh #FFF, 233vw 290vh rgba(255, 255, 255, 0.6), 239vw 240vh rgba(224, 240, 255, 0.8), 245vw 285vh #FFF, 251vw 210vh rgba(255, 240, 224, 0.7), 257vw 255vh #FFF, 263vw 220vh rgba(255, 255, 255, 0.7), 269vw 280vh #FFF, 275vw 235vh rgba(224, 240, 255, 0.8), 281vw 260vh rgba(255, 240, 224, 0.9), 287vw 295vh #FFF, 293vw 245vh rgba(255, 255, 255, 0.6), 299vw 218vh rgba(224, 240, 255, 0.8);
+            animation: twinkleMedium 6s ease-in-out infinite alternate;
+            -webkit-animation: twinkleMedium 6s ease-in-out infinite alternate;
+        }
+
+        .large {
+            width: 1.5px; height: 1.5px; border-radius: 50%;
+            box-shadow: 
+                6vw 15vh #FFF, 18vw 45vh #FFF, 30vw 85vh #FFF, 42vw 20vh #FFF, 54vw 60vh #FFF, 66vw 95vh #FFF, 78vw 35vh #FFF, 90vw 70vh #FFF,
+                106vw 15vh #FFF, 118vw 45vh #FFF, 130vw 85vh #FFF, 142vw 20vh #FFF, 154vw 60vh #FFF, 166vw 95vh #FFF, 178vw 35vh #FFF, 190vw 70vh #FFF,
+                206vw 15vh #FFF, 218vw 45vh #FFF, 230vw 85vh #FFF, 242vw 20vh #FFF, 254vw 60vh #FFF, 266vw 95vh #FFF, 278vw 35vh #FFF, 290vw 70vh #FFF,
+                12vw 125vh #FFF, 24vw 165vh #FFF, 36vw 110vh #FFF, 48vw 190vh #FFF, 60vw 145vh #FFF, 72vw 180vh #FFF, 84vw 115vh #FFF, 96vw 155vh #FFF,
+                112vw 125vh #FFF, 124vw 165vh #FFF, 136vw 110vh #FFF, 148vw 190vh #FFF, 160vw 145vh #FFF, 172vw 180vh #FFF, 184vw 115vh #FFF, 196vw 155vh #FFF,
+                212vw 125vh #FFF, 224vw 165vh #FFF, 236vw 110vh #FFF, 248vw 190vh #FFF, 260vw 145vh #FFF, 272vw 180vh #FFF, 284vw 115vh #FFF, 296vw 155vh #FFF,
+                8vw 220vh #FFF, 20vw 280vh #FFF, 32vw 245vh #FFF, 44vw 215vh #FFF, 56vw 275vh #FFF, 68vw 230vh #FFF, 80vw 290vh #FFF, 92vw 255vh #FFF,
+                108vw 220vh #FFF, 120vw 280vh #FFF, 132vw 245vh #FFF, 144vw 215vh #FFF, 156vw 275vh #FFF, 168vw 230vh #FFF, 180vw 290vh #FFF, 192vw 255vh #FFF,
+                208vw 220vh #FFF, 220vw 280vh #FFF, 232vw 245vh #FFF, 244vw 215vh #FFF, 256vw 275vh #FFF, 268vw 230vh #FFF, 280vw 290vh #FFF, 292vw 255vh #FFF;
+            animation: twinkleLarge 3s ease-in-out infinite alternate;
+            -webkit-animation: twinkleLarge 3s ease-in-out infinite alternate;
+        }
+
+        .static-dense {
+            width: 1px; height: 1px; border-radius: 50%;
+            box-shadow: 
+                4vw 4vh rgba(255,255,255,0.7), 13vw 37vh rgba(255,255,255,0.8), 26vw 74vh rgba(255,255,255,0.6), 34vw 16vh rgba(255,255,255,0.9), 47vw 88vh rgba(255,255,255,0.7), 58vw 24vh rgba(255,255,255,0.8), 69vw 61vh rgba(255,255,255,0.7), 83vw 41vh rgba(255,255,255,0.6), 94vw 93vh rgba(255,255,255,0.9),
+                104vw 4vh rgba(255,255,255,0.7), 113vw 37vh rgba(255,255,255,0.8), 126vw 74vh rgba(255,255,255,0.6), 134vw 16vh rgba(255,255,255,0.9), 147vw 88vh rgba(255,255,255,0.7), 158vw 24vh rgba(255,255,255,0.8), 169vw 61vh rgba(255,255,255,0.7), 183vw 41vh rgba(255,255,255,0.6), 194vw 93vh rgba(255,255,255,0.9),
+                204vw 4vh rgba(255,255,255,0.7), 213vw 37vh rgba(255,255,255,0.8), 226vw 74vh rgba(255,255,255,0.6), 234vw 16vh rgba(255,255,255,0.9), 247vw 88vh rgba(255,255,255,0.7), 258vw 24vh rgba(255,255,255,0.8), 269vw 61vh rgba(255,255,255,0.7), 283vw 41vh rgba(255,255,255,0.6), 294vw 93vh rgba(255,255,255,0.9),
+                11vw 142vh rgba(255,255,255,0.8), 22vw 185vh rgba(255,255,255,0.6), 33vw 121vh rgba(255,255,255,0.7), 41vw 197vh rgba(255,255,255,0.9), 56vw 153vh rgba(255,255,255,0.8), 71vw 112vh rgba(255,255,255,0.7), 85vw 178vh rgba(255,255,255,0.6), 96vw 135vh rgba(255,255,255,0.9),
+                111vw 142vh rgba(255,255,255,0.8), 122vw 185vh rgba(255,255,255,0.6), 133vw 121vh rgba(255,255,255,0.7), 141vw 197vh rgba(255,255,255,0.9), 156vw 153vh rgba(255,255,255,0.8), 171vw 112vh rgba(255,255,255,0.7), 185vw 178vh rgba(255,255,255,0.6), 196vw 135vh rgba(255,255,255,0.9),
+                211vw 142vh rgba(255,255,255,0.8), 222vw 185vh rgba(255,255,255,0.6), 233vw 121vh rgba(255,255,255,0.7), 241vw 197vh rgba(255,255,255,0.9), 256vw 153vh rgba(255,255,255,0.8), 271vw 112vh rgba(255,255,255,0.7), 285vw 178vh rgba(255,255,255,0.6), 296vw 135vh rgba(255,255,255,0.9),
+                7vw 216vh rgba(255,255,255,0.7), 18vw 273vh rgba(255,255,255,0.9), 29vw 244vh rgba(255,255,255,0.6), 39vw 291vh rgba(255,255,255,0.8), 53vw 222vh rgba(255,255,255,0.7), 64vw 265vh rgba(255,255,255,0.9), 77vw 208vh rgba(255,255,255,0.6), 89vw 283vh rgba(255,255,255,0.8),
+                107vw 216vh rgba(255,255,255,0.7), 118vw 273vh rgba(255,255,255,0.9), 129vw 244vh rgba(255,255,255,0.6), 139vw 291vh rgba(255,255,255,0.8), 153vw 222vh rgba(255,255,255,0.7), 164vw 265vh rgba(255,255,255,0.9), 177vw 208vh rgba(255,255,255,0.6), 189vw 283vh rgba(255,255,255,0.8),
+                207vw 216vh rgba(255,255,255,0.7), 218vw 273vh rgba(255,255,255,0.9), 229vw 244vh rgba(255,255,255,0.6), 239vw 291vh rgba(255,255,255,0.8), 253vw 222vh rgba(255,255,255,0.7), 264vw 265vh rgba(255,255,255,0.9), 277vw 208vh rgba(255,255,255,0.6), 289vw 283vh rgba(255,255,255,0.8);
+            animation: twinkleStaticDense 5s ease-in-out infinite alternate;
+            -webkit-animation: twinkleStaticDense 5s ease-in-out infinite alternate;
+        }
+
+        .twinkle-dense {
+            width: 1.2px; height: 1.2px; border-radius: 50%;
+            box-shadow: 
+                14vw 22vh rgba(224,240,255,0.8), 23vw 54vh rgba(255,240,224,0.9), 41vw 11vh rgba(255,255,255,0.7), 52vw 78vh rgba(224,240,255,0.8), 61vw 32vh rgba(255,240,224,0.9), 74vw 86vh rgba(255,255,255,0.7), 86vw 48vh rgba(224,240,255,0.8), 97vw 19vh rgba(255,240,224,0.9),
+                114vw 22vh rgba(224,240,255,0.8), 123vw 54vh rgba(255,240,224,0.9), 141vw 11vh rgba(255,255,255,0.7), 152vw 78vh rgba(224,240,255,0.8), 161vw 32vh rgba(255,240,224,0.9), 174vw 86vh rgba(255,255,255,0.7), 186vw 48vh rgba(224,240,255,0.8), 197vw 19vh rgba(255,240,224,0.9),
+                214vw 22vh rgba(224,240,255,0.8), 223vw 54vh rgba(255,240,224,0.9), 241vw 11vh rgba(255,255,255,0.7), 252vw 78vh rgba(224,240,255,0.8), 261vw 32vh rgba(255,240,224,0.9), 274vw 86vh rgba(255,255,255,0.7), 286vw 48vh rgba(224,240,255,0.8), 297vw 19vh rgba(255,240,224,0.9),
+                9vw 162vh rgba(255,255,255,0.7), 27vw 138vh rgba(224,240,255,0.8), 39vw 181vh rgba(255,240,224,0.9), 49vw 117vh rgba(255,255,255,0.7), 63vw 158vh rgba(224,240,255,0.8), 79vw 192vh rgba(255,240,224,0.9), 88vw 124vh rgba(255,255,255,0.7),
+                109vw 162vh rgba(255,255,255,0.7), 127vw 138vh rgba(224,240,255,0.8), 139vw 181vh rgba(255,240,224,0.9), 149vw 117vh rgba(255,255,255,0.7), 163vw 158vh rgba(224,240,255,0.8), 179vw 192vh rgba(255,240,224,0.9), 188vw 124vh rgba(255,255,255,0.7),
+                209vw 162vh rgba(255,255,255,0.7), 227vw 138vh rgba(224,240,255,0.8), 239vw 181vh rgba(255,240,224,0.9), 249vw 117vh rgba(255,255,255,0.7), 263vw 158vh rgba(224,240,255,0.8), 279vw 192vh rgba(255,240,224,0.9), 288vw 124vh rgba(255,255,255,0.7),
+                16vw 218vh rgba(255,240,224,0.9), 25vw 284vh rgba(255,255,255,0.7), 43vw 246vh rgba(224,240,255,0.8), 51vw 211vh rgba(255,240,224,0.9), 67vw 277vh rgba(255,255,255,0.7), 81vw 233vh rgba(224,240,255,0.8), 93vw 261vh rgba(255,240,224,0.9),
+                116vw 218vh rgba(255,240,224,0.9), 125vw 284vh rgba(255,255,255,0.7), 143vw 246vh rgba(224,240,255,0.8), 151vw 211vh rgba(255,240,224,0.9), 167vw 277vh rgba(255,255,255,0.7), 181vw 233vh rgba(224,240,255,0.8), 193vw 261vh rgba(255,240,224,0.9),
+                216vw 218vh rgba(255,240,224,0.9), 225vw 284vh rgba(255,255,255,0.7), 243vw 246vh rgba(224,240,255,0.8), 251vw 211vh rgba(255,240,224,0.9), 267vw 277vh rgba(255,255,255,0.7), 281vw 233vh rgba(224,240,255,0.8), 293vw 261vh rgba(255,240,224,0.9);
+            animation: twinkleSoft 5s ease-in-out infinite alternate;
+            -webkit-animation: twinkleSoft 5s ease-in-out infinite alternate;
+        }
+
+        .depth-dense {
+            width: 1px; height: 1px; border-radius: 50%;
+            box-shadow: 
+                1vw 3vw rgba(255,255,255,0.5), 18vw 28vh rgba(255,255,255,0.6), 37vw 7vh rgba(255,255,255,0.4), 54vw 44vh rgba(255,255,255,0.7), 68vw 12vh rgba(255,255,255,0.5), 89vw 33vh rgba(255,255,255,0.6),
+                101vw 3vw rgba(255,255,255,0.5), 118vw 28vh rgba(255,255,255,0.6), 137vw 7vh rgba(255,255,255,0.4), 154vw 44vh rgba(255,255,255,0.7), 168vw 12vh rgba(255,255,255,0.5), 189vw 33vh rgba(255,255,255,0.6),
+                201vw 3vw rgba(255,255,255,0.5), 218vw 28vh rgba(255,255,255,0.6), 237vw 7vh rgba(255,255,255,0.4), 254vw 44vh rgba(255,255,255,0.7), 268vw 12vh rgba(255,255,255,0.5), 289vw 33vh rgba(255,255,255,0.6),
+                13vw 123vh rgba(255,255,255,0.6), 29vw 174vh rgba(255,255,255,0.4), 48vw 113vh rgba(255,255,255,0.7), 62vw 188vh rgba(255,255,255,0.5), 75vw 142vh rgba(255,255,255,0.6), 91vw 193vh rgba(255,255,255,0.4),
+                113vw 123vh rgba(255,255,255,0.6), 129vw 174vh rgba(255,255,255,0.4), 148vw 113vh rgba(255,255,255,0.7), 162vw 188vh rgba(255,255,255,0.5), 175vw 142vh rgba(255,255,255,0.6), 191vw 193vh rgba(255,255,255,0.4),
+                213vw 123vh rgba(255,255,255,0.6), 229vw 174vh rgba(255,255,255,0.4), 248vw 113vh rgba(255,255,255,0.7), 262vw 188vh rgba(255,255,255,0.5), 275vw 142vh rgba(255,255,255,0.6), 291vw 193vh rgba(255,255,255,0.4),
+                5vw 255vh rgba(255,255,255,0.5), 24vw 216vh rgba(255,255,255,0.7), 42vw 282vh rgba(255,255,255,0.4), 59vw 238vh rgba(255,255,255,0.6), 72vw 296vh rgba(255,255,255,0.5), 88vw 212vh rgba(255,255,255,0.7),
+                105vw 255vh rgba(255,255,255,0.5), 124vw 216vh rgba(255,255,255,0.7), 142vw 282vh rgba(255,255,255,0.4), 159vw 238vh rgba(255,255,255,0.6), 172vw 296vh rgba(255,255,255,0.5), 188vw 212vh rgba(255,255,255,0.7),
+                205vw 255vh rgba(255,255,255,0.5), 224vw 216vh rgba(255,255,255,0.7), 242vw 282vh rgba(255,255,255,0.4), 259vw 238vh rgba(255,255,255,0.6), 272vw 296vh rgba(255,255,255,0.5), 288vw 212vh rgba(255,255,255,0.7);
+            animation: twinkleDeep 7s ease-in-out infinite alternate;
+            -webkit-animation: twinkleDeep 7s ease-in-out infinite alternate;
+        }
+
+        /* =========================================
+           4. COMETAS E METEOROS REALISTAS
+           ========================================= */
+        .comet {
+            position: absolute;
+            width: var(--tail, 150px);
+            height: 2px;
+            background: linear-gradient(to right, rgba(255, 255, 255, 1) 0%, rgba(150, 200, 255, 0.8) 15%, rgba(50, 100, 255, 0.3) 45%, rgba(0, 0, 0, 0) 100%);
+            border-radius: 50%;
+            transform-origin: left center;
+            -webkit-transform-origin: left center;
+            opacity: 0; 
+            will-change: transform, opacity;
+            box-shadow: 0 0 10px rgba(100, 150, 255, 0.2);
+            -webkit-box-shadow: 0 0 10px rgba(100, 150, 255, 0.2);
+            animation: shoot var(--duration) infinite var(--delay);
+            -webkit-animation: shoot var(--duration) infinite var(--delay);
+        }
+
+        .comet::after {
+            content: '';
+            position: absolute;
+            left: 0; 
+            top: 50%;
+            transform: translateY(-50%);
+            -webkit-transform: translateY(-50%);
+            width: var(--head-size, 4px);
+            height: var(--head-size, 4px);
+            background: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 0 8px 2px rgba(255, 255, 255, 1), 0 0 16px 6px rgba(100, 180, 255, 0.8), 0 0 30px 10px rgba(50, 100, 255, 0.4);
+            -webkit-box-shadow: 0 0 8px 2px rgba(255, 255, 255, 1), 0 0 16px 6px rgba(100, 180, 255, 0.8), 0 0 30px 10px rgba(50, 100, 255, 0.4);
+        }
+
+        /* Coordenadas de los meteoros (Reducidos a 8 y mucho mÃ¡s ocasionales) */
+        .c1  { top: -10vh; right: -10vw; --tail: 220px; --head-size: 5px; --angle: -45deg; --duration: 18s; --delay: 2s; }
+        .c2  { top: -25vh; right: 15vw;  --tail: 120px; --head-size: 2px; --angle: -50deg; --duration: 25s; --delay: 15s; }
+        .c3  { top: -5vh;  right: 35vw;  --tail: 180px; --head-size: 4px; --angle: -55deg; --duration: 20s; --delay: 32s; }
+        .c4  { top: -15vh; right: 5vw;   --tail: 150px; --head-size: 3px; --angle: -40deg; --duration: 22s; --delay: 48s; }
+        .c5  { top: -40vh; right: 60vw;  --tail: 300px; --head-size: 6px; --angle: -60deg; --duration: 35s; --delay: 65s; }
+        .c6  { top: -20vh; right: -25vw; --tail: 100px; --head-size: 2px; --angle: -38deg; --duration: 16s; --delay: 82s; }
+        .c7  { top: -8vh;  right: 45vw;  --tail: 180px; --head-size: 3px; --angle: -48deg; --duration: 24s; --delay: 98s; }
+        .c8  { top: -30vh; right: 20vw;  --tail: 200px; --head-size: 4px; --angle: -52deg; --duration: 28s; --delay: 115s; }
+
+        /* =========================================
+           5. ASTEROIDE REALISTA
+           ========================================= */
+        .asteroid-container {
+            position: absolute;
+            top: -15vh;
+            right: -10vw;
+            z-index: 60; 
+            will-change: transform, opacity;
+            opacity: 0;
+            animation: shootAsteroid 28s linear infinite 8s; 
+            -webkit-animation: shootAsteroid 28s linear infinite 8s;
+        }
+
+        .asteroid {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .asteroid img {
+            width: 80px; 
+            height: auto;
+            position: relative;
+            z-index: 3;
+            filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.6));
+            -webkit-filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.6));
+        }
+
+        /* =========================================
+           6. PLANETAS, ESTRELLA ESPECIAL Y NAVE ESPACIAL
+           ========================================= */
+        .planet {
+            position: absolute;
+            will-change: transform;
+            filter: drop-shadow(0 0 40px rgba(0, 50, 100, 0.5));
+            -webkit-filter: drop-shadow(0 0 40px rgba(0, 50, 100, 0.5));
+        }
+
+        .planet-uranus {
+            top: 65vh;
+            left: 10vw;
+            width: 130px;
+            z-index: 15;
+            animation: floatPlanet 18s ease-in-out infinite alternate;
+            -webkit-animation: floatPlanet 18s ease-in-out infinite alternate;
+        }
+
+        .planet-jupiter {
+            top: 15vh;
+            left: 25vw;
+            width: 300px;
+            z-index: 25;
+            filter: drop-shadow(0 0 60px rgba(150, 100, 50, 0.4));
+            -webkit-filter: drop-shadow(0 0 60px rgba(150, 100, 50, 0.4));
+            animation: floatPlanet 25s ease-in-out infinite alternate-reverse;
+            -webkit-animation: floatPlanet 25s ease-in-out infinite alternate-reverse;
+        }
+
+        .planet-mercury {
+            top: 30vh;
+            left: 68vw;
+            width: 150px;
+            z-index: 5;
+            filter: drop-shadow(0 0 20px rgba(200, 150, 100, 0.3));
+            -webkit-filter: drop-shadow(0 0 20px rgba(200, 150, 100, 0.3));
+            animation: floatPlanet 12s ease-in-out infinite alternate;
+            -webkit-animation: floatPlanet 12s ease-in-out infinite alternate;
+        }
+
+        /* Estrellas Especiales Brillantes esparcidas (MÃ¡s pequeÃ±as y distantes) */
+        .special-star {
+            position: absolute;
+            z-index: 20;
+            will-change: transform, opacity, filter;
+        }
+        
+        .s1 { width: 12px; top: 18vh; right: 15vw; animation: pulseSpecial 4s ease-in-out infinite alternate; }
+        .s2 { width: 8px; top: 45vh; left: 8vw; animation: pulseSpecial 5s ease-in-out infinite alternate 1s; }
+        .s3 { width: 16px; top: 75vh; right: 40vw; animation: pulseSpecial 3.5s ease-in-out infinite alternate 2s; }
+        .s4 { width: 10px; top: 25vh; left: 35vw; animation: pulseSpecial 4.8s ease-in-out infinite alternate 0.5s; }
+        .s5 { width: 6px; top: 85vh; left: 20vw; animation: pulseSpecial 3.2s ease-in-out infinite alternate 1.5s; }
+        .s6 { width: 14px; top: 12vh; left: 65vw; animation: pulseSpecial 5.5s ease-in-out infinite alternate 0.2s; }
+        .s7 { width: 9px; top: 55vh; right: 10vw; animation: pulseSpecial 4.2s ease-in-out infinite alternate 2.5s; }
+        .s8 { width: 11px; top: 82vh; right: 65vw; animation: pulseSpecial 3.8s ease-in-out infinite alternate 1.2s; }
+
+        @-webkit-keyframes floatPlanet {
+            0% { -webkit-transform: translateY(0) rotate(0deg); }
+            100% { -webkit-transform: translateY(20px) rotate(2deg); }
+        }
+        @keyframes floatPlanet {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(20px) rotate(2deg); }
+        }
+
+        .spaceship-container {
+            position: absolute;
+            top: 55vh;
+            left: -20vw; 
+            width: 80px;
+            z-index: 50;
+            will-change: transform, opacity, filter;
+            animation: spaceshipWarp 22s linear infinite 5s; 
+            -webkit-animation: spaceshipWarp 22s linear infinite 5s;
+        }
+
+        .spaceship-container img {
+            width: 100%;
+            height: auto;
+            filter: drop-shadow(-5px 0 10px rgba(100, 200, 255, 0.6));
+            -webkit-filter: drop-shadow(-5px 0 10px rgba(100, 200, 255, 0.6));
+        }
+
+        /* =========================================
+           7. KEYFRAMES Y ANIMACIONES
+           ========================================= */
+
+        /* Mayor brillo en las estrellas */
+        @-webkit-keyframes twinkleStaticDense {
+            0% { opacity: 0.5; -webkit-filter: drop-shadow(0 0 1px rgba(255,255,255,0.2)); }
+            100% { opacity: 1; -webkit-filter: drop-shadow(0 0 6px rgba(255,255,255,0.9)); }
+        }
+        @keyframes twinkleStaticDense {
+            0% { opacity: 0.5; filter: drop-shadow(0 0 1px rgba(255,255,255,0.2)); }
+            100% { opacity: 1; filter: drop-shadow(0 0 6px rgba(255,255,255,0.9)); }
+        }
+
+        @-webkit-keyframes twinkleSmall { 0% { opacity: 0.9; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        @keyframes twinkleSmall { 0% { opacity: 0.9; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        
+        @-webkit-keyframes twinkleMedium { 0% { opacity: 1; -webkit-filter: drop-shadow(0 0 4px rgba(255,255,255,0.8)); } 50% { opacity: 0.7; -webkit-filter: drop-shadow(0 0 2px rgba(255,255,255,0.5)); } 100% { opacity: 1; -webkit-filter: drop-shadow(0 0 8px rgba(255,255,255,1)); } }
+        @keyframes twinkleMedium { 0% { opacity: 1; filter: drop-shadow(0 0 4px rgba(255,255,255,0.8)); } 50% { opacity: 0.7; filter: drop-shadow(0 0 2px rgba(255,255,255,0.5)); } 100% { opacity: 1; filter: drop-shadow(0 0 8px rgba(255,255,255,1)); } }
+        
+        @-webkit-keyframes twinkleLarge { 0% { opacity: 1; -webkit-filter: drop-shadow(0 0 6px rgba(255,255,255,1)); } 50% { opacity: 0.8; -webkit-filter: drop-shadow(0 0 2px rgba(255,255,255,0.8)); } 100% { opacity: 1; -webkit-filter: drop-shadow(0 0 12px rgba(255,255,255,1)); } }
+        @keyframes twinkleLarge { 0% { opacity: 1; filter: drop-shadow(0 0 6px rgba(255,255,255,1)); } 50% { opacity: 0.8; filter: drop-shadow(0 0 2px rgba(255,255,255,0.8)); } 100% { opacity: 1; filter: drop-shadow(0 0 12px rgba(255,255,255,1)); } }
+
+        @-webkit-keyframes twinkleSoft { 0% { opacity: 0.9; } 50% { opacity: 0.65; } 100% { opacity: 1; } }
+        @keyframes twinkleSoft { 0% { opacity: 0.9; } 50% { opacity: 0.65; } 100% { opacity: 1; } }
+
+        @-webkit-keyframes twinkleDeep { 0% { opacity: 0.8; } 50% { opacity: 0.4; } 100% { opacity: 0.9; } }
+        @keyframes twinkleDeep { 0% { opacity: 0.8; } 50% { opacity: 0.4; } 100% { opacity: 0.9; } }
+
+        /* AnimaciÃ³n para las estrellas esparcidas (Ajustado resplandor para parecer mÃ¡s distantes) */
+        @-webkit-keyframes pulseSpecial {
+            0% { -webkit-transform: scale(0.7); opacity: 0.6; -webkit-filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.4)); }
+            100% { -webkit-transform: scale(1.3); opacity: 1; -webkit-filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.9)); }
+        }
+        @keyframes pulseSpecial {
+            0% { transform: scale(0.7); opacity: 0.6; filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.4)); }
+            100% { transform: scale(1.3); opacity: 1; filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.9)); }
+        }
+
+        @-webkit-keyframes shoot {
+            0% { -webkit-transform: rotate(var(--angle)) translate3d(0, 0, 0); opacity: 0; -webkit-animation-timing-function: ease-in; }
+            2% { opacity: 1; }
+            15% { opacity: 1; }
+            22% { opacity: 0; }
+            25% { -webkit-transform: rotate(var(--angle)) translate3d(-200vw, 0, 0); opacity: 0; -webkit-animation-timing-function: linear; }
+            100% { -webkit-transform: rotate(var(--angle)) translate3d(-200vw, 0, 0); opacity: 0; }
+        }
+        @keyframes shoot {
+            0% { transform: rotate(var(--angle)) translate3d(0, 0, 0); opacity: 0; animation-timing-function: ease-in; }
+            2% { opacity: 1; }
+            15% { opacity: 1; }
+            22% { opacity: 0; }
+            25% { transform: rotate(var(--angle)) translate3d(-200vw, 0, 0); opacity: 0; animation-timing-function: linear; }
+            100% { transform: rotate(var(--angle)) translate3d(-200vw, 0, 0); opacity: 0; }
+        }
+
+        /* El asteroide ahora se traslada directamente para no rotar la imagen */
+        @-webkit-keyframes shootAsteroid {
+            0% { -webkit-transform: translate3d(0, 0, 0); opacity: 0; }
+            2% { opacity: 1; }
+            45% { opacity: 1; }
+            55% { -webkit-transform: translate3d(-100vw, 150vh, 0); opacity: 0; }
+            100% { -webkit-transform: translate3d(-100vw, 150vh, 0); opacity: 0; }
+        }
+        @keyframes shootAsteroid {
+            0% { transform: translate3d(0, 0, 0); opacity: 0; }
+            2% { opacity: 1; }
+            45% { opacity: 1; }
+            55% { transform: translate3d(-100vw, 150vh, 0); opacity: 0; }
+            100% { transform: translate3d(-100vw, 150vh, 0); opacity: 0; }
+        }
+
+        @-webkit-keyframes spaceshipWarp {
+            0%   { -webkit-transform: translate3d(0, 0, 0) scale(1); opacity: 0; }
+            5%   { opacity: 1; }
+            35%  { -webkit-transform: translate3d(45vw, -5vh, 0) scale(1); opacity: 1; -webkit-filter: blur(0px); } 
+            37%  { -webkit-transform: translate3d(47vw, -5.5vh, 0) scaleX(1.4) scaleY(0.8); opacity: 1; -webkit-filter: blur(1px); } 
+            40%  { -webkit-transform: translate3d(150vw, -15vh, 0) scaleX(4) scaleY(0.2); opacity: 0; -webkit-filter: blur(8px); } 
+            100% { -webkit-transform: translate3d(150vw, -15vh, 0); opacity: 0; }
+        }
+        @keyframes spaceshipWarp {
+            0%   { transform: translate3d(0, 0, 0) scale(1); opacity: 0; }
+            5%   { opacity: 1; }
+            35%  { transform: translate3d(45vw, -5vh, 0) scale(1); opacity: 1; filter: blur(0px); } 
+            37%  { transform: translate3d(47vw, -5.5vh, 0) scaleX(1.4) scaleY(0.8); opacity: 1; filter: blur(1px); } 
+            40%  { transform: translate3d(150vw, -15vh, 0) scaleX(4) scaleY(0.2); opacity: 0; filter: blur(8px); } 
+            100% { transform: translate3d(150vw, -15vh, 0); opacity: 0; }
+        }
+
+        /* =========================================
+           8. MEDIA QUERIES (RESPONSIVIDADE MOBILE)
+           ========================================= */
+        @media (max-width: 768px) {
+            .comet { width: calc(var(--tail) * 0.6) !important; }
+            .asteroid-container { --angle: -65deg !important; }
+            .asteroid img { width: 55px; }
+
+            .planet-uranus { width: 85px; top: 60vh; left: 5vw; }
+            .planet-jupiter { width: 250px; top: 15vh; left: 15vw; }
+            .planet-mercury { width: 40px; top: 38vh; left: 70vw; }
+            .spaceship-container { width: 50px; top: 40vh; }
+            
+            /* Ajustar estrellas para mÃ³vil */
+            .s1 { width: 9px; top: 15vh; right: 10vw; }
+            .s3 { width: 12px; top: 70vh; right: 25vw; }
+            .s6 { width: 10px; top: 10vh; left: 55vw; }
+        }
+
+        /* =========================================
+           9. LOGO EN ESQUINA (NUEVO)
+           ========================================= */
+        .corner-logo {
+            position: absolute;
+            bottom: max(25px, env(safe-area-inset-bottom));
+            right: max(25px, env(safe-area-inset-right));
+            z-index: 100;
+            display: block;
+            transition: all 0.3s ease;
+            -webkit-transition: all 0.3s ease;
+            -moz-transition: all 0.3s ease;
+            opacity: 0.7;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .corner-logo img {
+            height: 30px; /* TamaÃ±o pequeÃ±o y profesional */
+            width: auto;
+            display: block;
+            filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3));
+            -webkit-filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3));
+            transition: all 0.3s ease;
+            -webkit-transition: all 0.3s ease;
+            -moz-transition: all 0.3s ease;
+        }
+
+        .corner-logo:hover, .corner-logo:active {
+            opacity: 1;
+        }
+
+        .corner-logo:hover img, .corner-logo:active img {
+            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 1)) brightness(1.2);
+            -webkit-filter: drop-shadow(0 0 15px rgba(255, 255, 255, 1)) brightness(1.2);
+            transform: scale(1.08);
+            -webkit-transform: scale(1.08);
+            -moz-transform: scale(1.08);
+        }
+
+        @media (max-width: 768px) {
+            .corner-logo {
+                bottom: max(15px, env(safe-area-inset-bottom));
+                right: max(15px, env(safe-area-inset-right));
+            }
+            .corner-logo img {
+                height: 24px; /* AÃºn mÃ¡s sutil en mÃ³viles */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="space-container">
+        <!-- Wrapper gigante -->
+        <div class="stars-wrapper">
+            <div class="stars small"></div>
+            <div class="stars medium"></div>
+            <div class="stars large"></div>
+            <div class="stars static-dense"></div>
+            <div class="stars twinkle-dense"></div>
+        </div>
+
+        <!-- Segundo wrapper para profundidad -->
+        <div class="stars-wrapper slow-spin">
+            <div class="stars depth-dense"></div>
+        </div>
+
+        <!-- ESTRELLAS ESPECIALES ESPARCIDAS -->
+        <img src="https://i.ibb.co/ZRJKmf4F/a-fwstar-80.webp" class="special-star s1" alt="Estrella brillante">
+        <img src="https://i.ibb.co/ZRJKmf4F/a-fwstar-80.webp" class="special-star s2" alt="Estrella brillante">
+        <img src="https://i.ibb.co/ZRJKmf4F/a-fwstar-80.webp" class="special-star s3" alt="Estrella brillante">
+        <img src="https://i.ibb.co/ZRJKmf4F/a-fwstar-80.webp" class="special-star s4" alt="Estrella brillante">
+        <img src="https://i.ibb.co/ZRJKmf4F/a-fwstar-80.webp" class="special-star s5" alt="Estrella brillante">
+        <img src="https://i.ibb.co/ZRJKmf4F/a-fwstar-80.webp" class="special-star s6" alt="Estrella brillante">
+        <img src="https://i.ibb.co/ZRJKmf4F/a-fwstar-80.webp" class="special-star s7" alt="Estrella brillante">
+        <img src="https://i.ibb.co/ZRJKmf4F/a-fwstar-80.webp" class="special-star s8" alt="Estrella brillante">
+
+        <!-- PLANETAS FLOTANTES -->
+        <img src="https://i.ibb.co/nsRmFfgM/a-uranus-80.webp" class="planet planet-uranus" alt="Urano">
+        <img src="https://i.ibb.co/gYGL00N/a-mercury-80.webp" class="planet planet-mercury" alt="Mercurio">
+        <img src="https://i.ibb.co/zTKtXNWP/a-jupiter-80.webp" class="planet planet-jupiter" alt="JÃºpiter">
+
+        <!-- NAVE ESPACIAL VELOCIDAD DE LA LUZ -->
+        <div class="spaceship-container">
+            <img src="https://i.ibb.co/hJhzH8Y8/a-spaceship-80.webp" alt="Nave Espacial">
+        </div>
+
+        <!-- O GRANDE ASTEROIDE REALISTA -->
+        <div class="asteroid-container">
+            <div class="asteroid">
+                <img src="https://i.ibb.co/JRLMbH8n/a-asteroid-20.webp" alt="Asteroide realista cayendo">
+            </div>
+        </div>
+
+        <!-- Sistema de Meteoros (Ocasionales y reducidos a 8) -->
+        <div class="comet c1"></div>
+        <div class="comet c2"></div>
+        <div class="comet c3"></div>
+        <div class="comet c4"></div>
+        <div class="comet c5"></div>
+        <div class="comet c6"></div>
+        <div class="comet c7"></div>
+        <div class="comet c8"></div>
+
+        <!-- LOGO EN LA ESQUINA -->
+        <a href="https://xat.com" target="_blank" rel="noopener noreferrer" class="corner-logo">
+            <img src="https://raw.githubusercontent.com/eamxat/Images/a4f50d39d3de6271b50c3748b6087692eab532e2/xatlogo%20text2.svg" alt="xat logo">
+        </a>
+
+    </div>
+
+    <!-- SCRIPT DE SEGURIDAD (BLOQUEO DE F12 Y CLICK DERECHO) -->
+    <script>
+        // Bloqueo de click derecho
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // Bloqueo de teclas de herramientas de desarrollador
+        document.addEventListener('keydown', function(e) {
+            // F12
+            if (e.key === 'F12' || e.keyCode === 123) {
+                e.preventDefault();
+            }
+            // Ctrl+Shift+I / Mac: Cmd+Option+I (Inspeccionar elemento)
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.keyCode === 73)) {
+                e.preventDefault();
+            }
+            // Ctrl+Shift+J / Mac: Cmd+Option+J (Consola)
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'J' || e.key === 'j' || e.keyCode === 74)) {
+                e.preventDefault();
+            }
+            // Ctrl+Shift+C / Mac: Cmd+Option+C (Selector de elementos)
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'C' || e.key === 'c' || e.keyCode === 67)) {
+                e.preventDefault();
+            }
+            // Ctrl+U / Mac: Cmd+Option+U (Ver cÃ³digo fuente)
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'U' || e.key === 'u' || e.keyCode === 85)) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
