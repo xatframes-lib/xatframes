@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<!-- CODIGO CREADO POR EAM96 (2026) -->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xat Gradients</title>
+    <!-- Favicon añadido -->
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/favicon-16x16.png">
+    <style>
+        :root {
+            /* Paleta por defecto (Ocean) */
+            --c1: #001f3f;
+            --c2: #0074d9;
+            --c3: #7fdbff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #030408; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Ocultar todos los inputs lógicos */
+        input[type="checkbox"],
+        input[type="radio"] {
+            display: none;
+        }
+
+        /* ========================================================
+           MOTOR DE FLUIDO (CSS PURO)
+           ======================================================== */
+        #fluid-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+            background-color: var(--c1);
+            transition: background-color 1s ease;
+            /* El desenfoque masivo fusiona los "blobs" creando el fluido */
+            filter: blur(60px); 
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            animation: fluid-morph infinite alternate ease-in-out;
+            transition: background-color 1s ease;
+            opacity: 0.95;
+            mix-blend-mode: screen;
+        }
+
+        .blob-1 {
+            width: 85vw;
+            height: 85vw;
+            background-color: var(--c2);
+            top: -20vh;
+            left: -10vw;
+            animation-duration: 9s;
+            animation-delay: 0s;
+        }
+
+        .blob-2 {
+            width: 95vw;
+            height: 95vw;
+            background-color: var(--c3);
+            bottom: -30vh;
+            right: -20vw;
+            animation-duration: 12s;
+            animation-delay: -2s;
+        }
+
+        .blob-3 {
+            width: 75vw;
+            height: 75vw;
+            background-color: var(--c1);
+            top: 40vh;
+            left: 30vw;
+            animation-duration: 10s;
+            animation-delay: -5s;
+        }
+        
+        .blob-4 {
+            width: 110vw;
+            height: 110vw;
+            background-color: var(--c2);
+            top: -40vh;
+            right: -10vw;
+            animation-duration: 14s;
+            animation-delay: -8s;
+        }
+
+        @keyframes fluid-morph {
+            0% {
+                transform: translate(0, 0) scale(0.9) rotate(0deg);
+                border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            }
+            33% {
+                transform: translate(25vw, 15vh) scale(1.2) rotate(120deg);
+                border-radius: 70% 30% 20% 80% / 60% 20% 80% 40%;
+            }
+            66% {
+                transform: translate(-20vw, 25vh) scale(0.8) rotate(240deg);
+                border-radius: 20% 80% 70% 30% / 30% 70% 40% 60%;
+            }
+            100% {
+                transform: translate(10vw, -20vh) scale(1.1) rotate(360deg);
+                border-radius: 30% 70% 50% 50% / 50% 60% 40% 50%;
+            }
+        }
+
+        /* ========================================================
+           LÓGICA CSS (INTERACTIVIDAD)
+           ======================================================== */
+        
+        /* Paletas */
+        #pal-ocean:checked ~ #fluid-container { --c1: #001f3f; --c2: #0074d9; --c3: #7fdbff; }
+        #pal-magma:checked ~ #fluid-container { --c1: #2a0800; --c2: #b22222; --c3: #ff8c00; }
+        #pal-cyber:checked ~ #fluid-container { --c1: #0d0221; --c2: #ff007f; --c3: #00f0ff; }
+        #pal-forest:checked ~ #fluid-container { --c1: #002b18; --c2: #007f5f; --c3: #aacc00; }
+        #pal-sunset:checked ~ #fluid-container { --c1: #15062a; --c2: #91165b; --c3: #ff8822; }
+
+        /* Activar Paleta Visualmente en la UI */
+        #pal-ocean:checked ~ #main-panel .lbl-ocean,
+        #pal-magma:checked ~ #main-panel .lbl-magma,
+        #pal-cyber:checked ~ #main-panel .lbl-cyber,
+        #pal-forest:checked ~ #main-panel .lbl-forest,
+        #pal-sunset:checked ~ #main-panel .lbl-sunset {
+            transform: scale(1.3);
+            border-color: #fff;
+        }
+
+        /* Toggle Panel Visibility */
+        #toggle-panel:not(:checked) ~ #main-panel {
+            max-width: 0;
+            opacity: 0;
+            pointer-events: none;
+            padding: 0;
+            border-width: 0;
+        }
+        
+        #toggle-panel:not(:checked) ~ #mini-open-btn {
+            display: flex;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #toggle-panel:checked ~ #mini-open-btn {
+            display: none;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* ========================================================
+           INTERFAZ DE USUARIO (GLASSMORPHISM)
+           ======================================================== */
+        #mini-open-btn {
+            position: fixed;
+            top: 65px;
+            left: 0;
+            width: 34px;
+            height: 34px;
+            background: rgba(15, 15, 15, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+            z-index: 2147483647;
+            user-select: none;
+            transition: background 0.2s, opacity 0.3s;
+        }
+
+        #mini-open-btn:hover {
+            background: rgba(45, 45, 45, 1);
+        }
+
+        #main-panel {
+            position: fixed; 
+            top: 65px; 
+            left: 0; 
+            width: max-content;  
+            height: 34px;   
+            box-sizing: border-box; 
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 0 10px 0 15px; 
+            background: rgba(15, 15, 15, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            transition: max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, padding 0.4s;
+            opacity: 1;
+            max-width: calc(100vw - 20px); 
+            overflow-x: auto;
+            overflow-y: hidden; 
+            white-space: nowrap;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+            scrollbar-width: none; 
+            z-index: 2147483647; 
+        }
+
+        #main-panel::-webkit-scrollbar {
+            display: none; 
+        }
+
+        .palette-btn {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            flex-shrink: 0;
+            display: inline-block;
+        }
+
+        .palette-btn:hover {
+            transform: scale(1.1);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .palette-label {
+            color: #ddd;
+            font-size: 11px;
+            margin-right: 5px;
+            user-select: none;
+            font-weight: bold;
+        }
+
+        #close-btn {
+            margin-left: auto; 
+            position: sticky;
+            right: 0;
+            z-index: 10;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            transition: background 0.2s, transform 0.2s;
+            flex-shrink: 0; 
+        }
+
+        #close-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.05);
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px; 
+            color: #ddd;
+            user-select: none;
+            height: 100%; 
+            flex-shrink: 0; 
+        }
+
+        .separator {
+            width: 1px;
+            height: 18px; 
+            background: rgba(255,255,255,0.25);
+            margin: 0 5px;
+            flex-shrink: 0;
+        }
+
+        .info-tag {
+            background: rgba(255,255,255,0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #aaa;
+            font-style: italic;
+        }
+
+        /* ========================================================
+           NUEVO: ESTILOS PARA EL LOGO DISCRETO
+           ======================================================== */
+        .logo-inferior-discreto {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000; /* Asegura que esté sobre el fondo, pero no tapa modales */
+            display: block;
+        }
+
+        .logo-inferior-img {
+            height: 25px; /* Tamaño prudente */
+            width: auto;
+            opacity: 0.05; /* Extremadamente baja como se solicitó */
+            transition: opacity 0.3s ease; /* Transición suave solo en la opacidad */
+            display: block;
+            border: none;
+        }
+
+        .logo-inferior-img:hover {
+            opacity: 0.4; /* Opacidad aumentada al hacer hover */
+        }
+
+        /* ========================================================
+           NUEVAS MEJORAS: RESTRICCIONES Y AJUSTES VISUALES
+           ======================================================== */
+        
+        /* 1. Ajuste de controles retraídos (Transiciones suaves) */
+        #toggle-panel:checked ~ #mini-open-btn {
+            display: flex !important; 
+            visibility: hidden;
+        }
+        
+        #toggle-panel:not(:checked) ~ #mini-open-btn {
+            display: flex !important;
+            visibility: visible;
+        }
+
+        /* 2. Bloqueo de interacción básico sin JS */
+        html, body {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        /* Evitar arrastre e interacción directa de imágenes */
+        img {
+            pointer-events: none;
+            -webkit-user-drag: none;
+        }
+
+        /* Mantener la funcionalidad de hover del logo al delegar el evento al enlace */
+        .logo-inferior-discreto:hover .logo-inferior-img {
+            opacity: 0.4;
+        }
+
+        /* ========================================================
+           AJUSTE 1: INVERSIÓN DE ESTADO INICIAL (PANEL CERRADO)
+           ======================================================== */
+        /* Se invierte la lógica del checkbox (que está 'checked' en HTML) 
+           para iniciar cerrado sin tener que alterar el HTML existente. */
+        
+        /* Estado inicial (checked): Panel oculto, Botón visible */
+        #toggle-panel:checked ~ #main-panel {
+            max-width: 0 !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            padding: 0 !important;
+            border-width: 0 !important;
+        }
+        #toggle-panel:checked ~ #mini-open-btn {
+            display: flex !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
+        }
+        
+        /* Estado alterno (desmarcado al hacer click): Panel visible, Botón oculto */
+        #toggle-panel:not(:checked) ~ #main-panel {
+            max-width: calc(100vw - 20px) !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            padding: 0 10px 0 15px !important;
+            border-width: 1px !important;
+        }
+        #toggle-panel:not(:checked) ~ #mini-open-btn {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- INPUTS LÓGICOS OCULTOS (El "Cerebro" CSS) -->
+    <input type="checkbox" id="toggle-panel" checked>
+    
+    <input type="radio" name="palette" id="pal-ocean" checked>
+    <input type="radio" name="palette" id="pal-magma">
+    <input type="radio" name="palette" id="pal-cyber">
+    <input type="radio" name="palette" id="pal-forest">
+    <input type="radio" name="palette" id="pal-sunset">
+
+    <!-- BOTÓN PARA ABRIR PANEL (Aparece cuando toggle-panel NO está checked) -->
+    <label for="toggle-panel" id="mini-open-btn" title="Mostrar Panel de Controles">≡</label>
+
+    <!-- PANEL PRINCIPAL -->
+    <div id="main-panel">
+        <div class="control-group">
+            <div class="palette-label">Colores:</div>
+            <label for="pal-ocean" class="palette-btn lbl-ocean" style="background: linear-gradient(135deg, #001f3f, #0074d9, #7fdbff);" title="Ocean"></label>
+            <label for="pal-magma" class="palette-btn lbl-magma" style="background: linear-gradient(135deg, #2a0800, #b22222, #ff8c00);" title="Magma"></label>
+            <label for="pal-cyber" class="palette-btn lbl-cyber" style="background: linear-gradient(135deg, #0d0221, #ff007f, #00f0ff);" title="Cyberpunk"></label>
+            <label for="pal-forest" class="palette-btn lbl-forest" style="background: linear-gradient(135deg, #002b18, #007f5f, #aacc00);" title="Forest"></label>
+            <label for="pal-sunset" class="palette-btn lbl-sunset" style="background: linear-gradient(135deg, #15062a, #91165b, #ff8822);" title="Sunset"></label>
+        </div>
+
+        <div class="separator"></div>
+
+        <div class="control-group">
+            <span class="info-tag">Xat.com</span>
+        </div>
+
+        <!-- BOTÓN DE CERRAR CONECTADO AL CHECKBOX DEL PANEL -->
+        <label for="toggle-panel" id="close-btn" title="Ocultar controles">❯</label>
+    </div>
+
+    <!-- EL "LIQUIDO" ANIMADO -->
+    <div id="fluid-container">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+        <div class="blob blob-4"></div>
+    </div>
+
+    <!-- LOGO INFERIOR DISCRETO -->
+    <a href="https://xat.com" class="logo-inferior-discreto" target="_blank" rel="noopener noreferrer">
+        <img src="https://raw.githubusercontent.com/eamxat/Images/7af4ec4622f89c3c332964539fc5991e7a6050bd/xatlogo%20text2.svg" alt="xat" class="logo-inferior-img">
+    </a>
+
+    <!-- ========================================================
+         AJUSTE 2: BLOQUEO DE INTERACCIÓN Y DEVTOOLS
+         ======================================================== -->
+    <script>
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    document.addEventListener('keydown', function(e) {
+      if (
+        e.key === "F12" ||
+        (e.ctrlKey && e.shiftKey && ["I","J"].includes(e.key.toUpperCase())) ||
+        (e.ctrlKey && e.key.toUpperCase() === "U")
+      ) {
+        e.preventDefault();
+      }
+    });
+    </script>
+</body>
+</html>
