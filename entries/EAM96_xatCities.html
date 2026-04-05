@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<!-- CODIGO CREADO POR EAM96 -->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xat Cities</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/favicon-16x16.png">
+    <style>
+        :root {
+            /* MODO DÍA (Valores por defecto) */
+            --sky-top: #6ab0ff;
+            --sky-bottom: #e0f6ff;
+            
+            --bg-build: #7a9ebf; /* Edificios de fondo */
+            --mg-build: #527598; /* Edificios medios */
+            --fg-build: #2c445e; /* Edificios frontales */
+            
+            --win-day: #94b5d6;  /* Ventanas apagadas */
+            --win-night: #ffebb5; /* Añadido por completitud para modo noche */
+            
+            --sun-opacity: 1;
+            --moon-opacity: 0;
+            --sun-y: 0vh;
+            --moon-y: 60vh; /* Luna escondida bajo los edificios */
+            
+            --star-opacity: 0;
+            
+            /* Ajustes para las nubes con imagen */
+            --cloud-opacity: 0.85;
+            --cloud-filter: grayscale(0%) brightness(1) drop-shadow(0 15px 15px rgba(0,0,0,0.05));
+            --bird-opacity: 1;
+        }
+
+        /* MODO NOCHE (Override global al activar el checkbox oculto) */
+        body:has(#dn-toggle:checked) {
+            --sky-top: #060814;
+            --sky-bottom: #1a2245;
+            
+            --bg-build: #111521;
+            --mg-build: #0a0d14;
+            --fg-build: #030406;
+            
+            --sun-opacity: 0;
+            --moon-opacity: 1;
+            --sun-y: 60vh; /* Sol escondido bajo los edificios */
+            --moon-y: 0vh;
+            
+            --star-opacity: 1;
+            
+            /* Nubes (Blanco y negro) y pájaros en la noche */
+            --cloud-opacity: 0.15;
+            --cloud-filter: grayscale(100%) brightness(0.2) drop-shadow(0 10px 10px rgba(0,0,0,0.5));
+            --bird-opacity: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--sky-top);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Ocultar inputs lógicos */
+        input[type="checkbox"] {
+            display: none;
+        }
+
+        /* ========================================================
+           ESCENA PRINCIPAL
+           ======================================================== */
+        .scene {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(to bottom, var(--sky-top) 0%, var(--sky-bottom) 100%);
+            transition: background 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            z-index: 1;
+            --current-win: var(--win-day);
+        }
+
+        body:has(#dn-toggle:checked) .scene {
+            --current-win: var(--win-night);
+        }
+
+        /* Astros (Sol y Luna Sincronizados Perfectamente) */
+        .celestial-sun, .celestial-moon {
+            position: absolute;
+            top: 10vh; right: 12vw;
+            width: 140px; height: 140px;
+            transition: transform 2.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 2.5s ease;
+            z-index: 2;
+        }
+
+        .celestial-sun {
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FFEFBA, #FFFFFF);
+            box-shadow: 0 0 40px 15px rgba(255, 215, 0, 0.4), 0 0 100px 35px rgba(255, 215, 0, 0.2);
+            opacity: var(--sun-opacity);
+            /* Ajuste de sol ligeramente a la derecha (+25px) sin romper la animacion Y */
+            transform: translate(25px, var(--sun-y));
+        }
+
+        .celestial-moon {
+            /* Imagen externa sin efectos internos */
+            background-image: url('https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/luna.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            
+            /* Resplandor exterior mediante drop-shadow */
+            filter: drop-shadow(0 0 20px rgba(180, 210, 255, 0.4)) 
+                    drop-shadow(0 0 50px rgba(180, 210, 255, 0.2));
+            
+            opacity: var(--moon-opacity);
+            /* Ajuste de luna ligeramente a la derecha (+25px) sin romper la animacion Y */
+            transform: translate(25px, var(--moon-y));
+            border: none;
+            outline: none;
+        }
+
+        /* ========================================================
+           SISTEMA DE ESTRELLAS REALISTAS
+           ======================================================== */
+        .stars-container {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            opacity: var(--star-opacity);
+            transition: opacity 1.5s ease;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .star-layer {
+            position: absolute;
+            top: 0; left: 0;
+            background: transparent;
+            border-radius: 50%;
+        }
+
+        .stars-xs {
+            width: 1px; height: 1px;
+            box-shadow: 
+                2vw 5vh #fff, 4vw 22vh #fff, 6vw 48vh #fff, 8vw 15vh #fff, 10vw 62vh #fff, 12vw 8vh #fff, 14vw 35vh #fff, 16vw 70vh #fff, 
+                18vw 2vh #fff, 20vw 42vh #fff, 22vw 18vh #fff, 24vw 55vh #fff, 26vw 30vh #fff, 28vw 85vh #fff, 30vw 12vh #fff, 32vw 45vh #fff, 
+                34vw 65vh #fff, 36vw 25vh #fff, 38vw 5vh #fff, 40vw 38vh #fff, 42vw 75vh #fff, 44vw 20vh #fff, 46vw 52vh #fff, 48vw 10vh #fff, 
+                50vw 35vh #fff, 52vw 68vh #fff, 54vw 28vh #fff, 56vw 3vh #fff, 58vw 48vh #fff, 60vw 80vh #fff, 62vw 15vh #fff, 64vw 58vh #fff, 
+                66vw 32vh #fff, 68vw 8vh #fff, 70vw 45vh #fff, 72vw 72vh #fff, 74vw 22vh #fff, 76vw 5vh #fff, 78vw 38vh #fff, 80vw 65vh #fff, 
+                82vw 12vh #fff, 84vw 50vh #fff, 86vw 28vh #fff, 88vw 85vh #fff, 90vw 18vh #fff, 92vw 42vh #fff, 94vw 75vh #fff, 96vw 8vh #fff, 
+                98vw 35vh #fff, 1vw 55vh #fff, 5vw 32vh #fff, 9vw 78vh #fff, 15vw 50vh #fff, 19vw 10vh #fff, 25vw 65vh #fff, 29vw 22vh #fff, 
+                35vw 82vh #fff, 39vw 15vh #fff, 45vw 60vh #fff, 49vw 25vh #fff, 55vw 88vh #fff, 59vw 12vh #fff, 65vw 52vh #fff, 69vw 30vh #fff, 
+                75vw 78vh #fff, 79vw 40vh #fff, 85vw 10vh #fff, 89vw 62vh #fff, 95vw 25vh #fff, 99vw 58vh #fff;
+            animation: twinkle-1 6s infinite ease-in-out;
+        }
+
+        .stars-sm {
+            width: 1.5px; height: 1.5px;
+            box-shadow: 
+                3vw 12vh #fff, 7vw 35vh #fff, 11vw 58vh #fff, 15vw 8vh #fff, 19vw 42vh #fff, 23vw 75vh #fff, 27vw 18vh #fff, 31vw 52vh #fff, 
+                35vw 2vh #fff, 39vw 30vh #fff, 43vw 65vh #fff, 47vw 10vh #fff, 51vw 45vh #fff, 55vw 82vh #fff, 59vw 22vh #fff, 63vw 55vh #fff, 
+                67vw 5vh #fff, 71vw 38vh #fff, 75vw 70vh #fff, 79vw 15vh #fff, 83vw 48vh #fff, 87vw 85vh #fff, 91vw 28vh #fff, 95vw 62vh #fff, 
+                99vw 12vh #fff, 2vw 40vh #fff, 8vw 72vh #fff, 14vw 20vh #fff, 20vw 60vh #fff, 26vw 8vh #fff, 32vw 88vh #fff, 38vw 25vh #fff, 
+                44vw 78vh #fff, 50vw 18vh #fff, 56vw 68vh #fff, 62vw 32vh #fff, 68vw 10vh #fff, 74vw 52vh #fff, 80vw 22vh #fff, 86vw 65vh #fff, 
+                92vw 5vh #fff, 98vw 42vh #fff, 5vw 85vh #fff, 12vw 28vh #fff, 18vw 50vh #fff, 25vw 15vh #fff, 34vw 60vh #fff, 41vw 8vh #fff, 
+                48vw 35vh #fff, 54vw 92vh #fff, 61vw 25vh #fff, 69vw 48vh #fff, 76vw 80vh #fff, 84vw 12vh #fff, 89vw 55vh #fff, 96vw 30vh #fff;
+            animation: twinkle-2 4.5s infinite ease-in-out 1s;
+        }
+
+        .stars-md {
+            width: 2px; height: 2px;
+            box-shadow: 
+                6vw 18vh #fff, 14vw 45vh #fff, 24vw 8vh #fff, 33vw 65vh #fff, 42vw 22vh #fff, 52vw 75vh #fff, 61vw 12vh #fff, 70vw 48vh #fff, 
+                81vw 5vh #fff, 90vw 35vh #fff, 97vw 82vh #fff, 9vw 55vh #fff, 18vw 25vh #fff, 28vw 85vh #fff, 38vw 15vh #fff, 48vw 52vh #fff, 
+                58vw 28vh #fff, 68vw 88vh #fff, 78vw 42vh #fff, 88vw 10vh #fff, 4vw 70vh #fff, 22vw 38vh #fff, 36vw 5vh #fff, 46vw 80vh #fff, 
+                56vw 18vh #fff, 66vw 60vh #fff, 76vw 25vh #fff, 86vw 68vh #fff, 94vw 20vh #fff, 2vw 28vh #fff;
+            animation: twinkle-3 3s infinite ease-in-out 2s;
+        }
+
+        .stars-lg {
+            width: 2.5px; height: 2.5px;
+            box-shadow: 
+                12vw 30vh #fff, 28vw 15vh #fff, 45vw 68vh #fff, 62vw 8vh #fff, 78vw 45vh #fff, 92vw 22vh #fff, 
+                8vw 80vh #fff, 35vw 50vh #fff, 55vw 25vh #fff, 72vw 75vh #fff, 85vw 55vh #fff, 20vw 5vh #fff, 
+                40vw 88vh #fff, 68vw 32vh #fff, 98vw 10vh #fff;
+            animation: twinkle-4 1.5s infinite ease-in-out 0.5s;
+        }
+
+        @keyframes twinkle-1 { 0%, 100% { opacity: 0.1; } 50% { opacity: 0.9; } }
+        @keyframes twinkle-2 { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+        @keyframes twinkle-3 { 0%, 100% { opacity: 0.1; } 50% { opacity: 0.8; } }
+        @keyframes twinkle-4 { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+        /* ========================================================
+           NUBES FOTOREALISTAS
+           ======================================================== */
+        .clouds-img-container {
+            position: absolute; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 3;
+            transition: opacity 1.5s ease, visibility 1.5s;
+        }
+
+        body:has(#dn-toggle:checked) .clouds-img-container {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .cloud-img {
+            position: absolute;
+            background-image: url('https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/wnGcbk7.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: var(--cloud-opacity);
+            filter: var(--cloud-filter);
+            will-change: transform;
+        }
+
+        /* NUBES DIURNAS OPTIMIZADAS */
+        .c-img-1 { left: -50vw; top: 5vh;  width: 35vw; height: 18vh; animation: drift 70s linear infinite -10s; opacity: calc(var(--cloud-opacity) * 0.9); }
+        .c-img-2 { left: 100vw; top: 15vh; width: 45vw; height: 22vh; animation: drift-rtl 85s linear infinite -40s; opacity: calc(var(--cloud-opacity) * 0.7); }
+        .c-img-3 { left: -60vw; top: -2vh; width: 55vw; height: 28vh; animation: drift 100s linear infinite -60s; opacity: calc(var(--cloud-opacity) * 0.6); }
+        .c-img-4 { left: 100vw; top: 25vh; width: 30vw; height: 15vh; animation: drift-rtl 60s linear infinite -15s; opacity: calc(var(--cloud-opacity) * 0.85); }
+        .c-img-5 { left: -45vw; top: 20vh; width: 40vw; height: 20vh; animation: drift 80s linear infinite -30s; opacity: calc(var(--cloud-opacity) * 0.75); }
+        .c-img-6 { left: 100vw; top: 8vh;  width: 50vw; height: 25vh; animation: drift-rtl 95s linear infinite -70s; opacity: calc(var(--cloud-opacity) * 0.65); }
+        .c-img-7 { left: -35vw; top: 32vh; width: 28vw; height: 14vh; animation: drift 55s linear infinite -5s;  opacity: calc(var(--cloud-opacity) * 0.95); }
+        .c-img-8 { left: 100vw; top: -5vh; width: 38vw; height: 19vh; animation: drift-rtl 75s linear infinite -25s; opacity: calc(var(--cloud-opacity) * 0.8); }
+
+        /* NUBES EXCLUSIVAS DE NOCHE */
+        .night-clouds-container {
+            position: absolute; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 3;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 1.5s ease, visibility 1.5s;
+        }
+
+        body:has(#dn-toggle:checked) .night-clouds-container {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .night-cloud {
+            position: absolute;
+            background-image: url('https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/nightcloud.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.35;
+            will-change: transform;
+        }
+
+        /* Instancias con direcciones alternadas */
+        .nc-1 { top: 8vh; left: -40vw; width: 25vw; height: 12vh; animation: drift 80s linear infinite; }
+        .nc-2 { top: 22vh; left: 100vw; width: 16vw; height: 8vh; animation: drift-rtl 90s linear infinite 10s; }
+        .nc-3 { top: 4vh; left: -50vw; width: 35vw; height: 16vh; animation: drift 110s linear infinite 5s; opacity: 0.25; }
+        .nc-4 { top: 15vh; left: 100vw; width: 22vw; height: 10vh; animation: drift-rtl 85s linear infinite 20s; }
+
+        @keyframes drift { 
+            0% { transform: translateX(0); } 
+            100% { transform: translateX(160vw); } 
+        }
+
+        @keyframes drift-rtl { 
+            0% { transform: translateX(0); } 
+            100% { transform: translateX(-160vw); } 
+        }
+
+        /* ========================================================
+           SISTEMA DE PÁJAROS ANIMADOS (Solo Día)
+           ======================================================== */
+        .birds-container {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            opacity: var(--bird-opacity);
+            transition: opacity 1s ease;
+            z-index: 4;
+        }
+
+        .bird-group {
+            position: absolute;
+            animation: fly-across linear infinite;
+            will-change: transform;
+        }
+
+        .bird {
+            position: relative;
+            width: 16px; height: 10px;
+        }
+        .bird::before, .bird::after {
+            content: ''; position: absolute; top: 0; 
+            width: 10px; height: 8px;
+            border-top: 2px solid var(--fg-build);
+            border-radius: 50%;
+        }
+        .bird::before { 
+            left: 0; transform-origin: right center; 
+            animation: flap-left 0.4s infinite alternate ease-in-out; 
+        }
+        .bird::after { 
+            right: 0; transform-origin: left center; 
+            animation: flap-right 0.4s infinite alternate ease-in-out; 
+        }
+
+        @keyframes flap-left { 0% { transform: rotate(15deg); } 100% { transform: rotate(-40deg); } }
+        @keyframes flap-right { 0% { transform: rotate(-15deg); } 100% { transform: rotate(40deg); } }
+
+        .flock-1 { top: 25vh; left: -10vw; animation-duration: 35s; animation-delay: 2s; transform: scale(1); }
+        .flock-2 { top: 40vh; left: -10vw; animation-duration: 45s; animation-delay: 18s; transform: scale(0.6); }
+        .flock-3 { top: 18vh; left: -10vw; animation-duration: 25s; animation-delay: 8s; transform: scale(0.8); }
+
+        @keyframes fly-across { 
+            0% { transform: translateX(0vw) translateY(0) scale(var(--s, 1)); } 
+            25% { transform: translateX(30vw) translateY(-2vh) scale(var(--s, 1)); }
+            75% { transform: translateX(80vw) translateY(3vh) scale(var(--s, 1)); }
+            100% { transform: translateX(120vw) translateY(-1vh) scale(var(--s, 1)); } 
+        }
+
+        /* ========================================================
+           NUEVOS EVENTOS DINÁMICOS: GLOBO (DÍA)
+           ======================================================== */
+        .day-balloon-wrapper {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 4;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 1.5s ease, visibility 1.5s;
+        }
+
+        body:has(#dn-toggle:checked) .day-balloon-wrapper {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .day-balloon {
+            position: absolute;
+            width: clamp(45px, 5.5vw, 75px);
+            height: clamp(65px, 8vw, 110px);
+            background-image: url('https://i.ibb.co/27ms4qJW/a-balloonfx-40.webp');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0; /* Controlado por JS para la alta frecuencia */
+            will-change: transform, opacity;
+        }
+
+        .day-balloon.js-fly {
+            animation: float-balloon-js 15s ease-in-out forwards;
+        }
+
+        .day-balloon-inner {
+            width: 100%; height: 100%;
+            /* Balanceo y oscilación por viento natural */
+            animation: sway-balloon 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes float-balloon-js {
+            0%   { transform: translate(var(--startX, 15vw), 110vh) scale(var(--bScale, 1)); opacity: 0; }
+            10%  { opacity: 1; }
+            90%  { opacity: 1; }
+            100% { transform: translate(var(--startX, 15vw), -25vh) scale(var(--bScale, 1)); opacity: 0; }
+        }
+
+        @keyframes sway-balloon {
+            0%   { transform: rotate(-6deg) translateX(-1.5vw); }
+            100% { transform: rotate(6deg) translateX(1.5vw); }
+        }
+
+        /* ========================================================
+           NUEVOS EVENTOS DINÁMICOS: AVIÓN Y OVNI (NOCHE EXCLUSIVOS)
+           ======================================================== */
+        .night-air-wrapper {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 4;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 1.5s ease, visibility 1.5s;
+        }
+
+        body:has(#dn-toggle:checked) .night-air-wrapper {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .night-airplane {
+            position: absolute;
+            top: 12vh;
+            width: clamp(60px, 6vw, 90px);
+            height: clamp(20px, 2vw, 30px);
+            background-image: url('https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/airplane.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            animation: fly-airplane-sync 80s linear infinite;
+            will-change: transform, opacity;
+        }
+
+        .night-ufo {
+            position: absolute;
+            top: 25vh;
+            width: clamp(55px, 5.5vw, 85px);
+            height: clamp(25px, 2.5vw, 40px);
+            opacity: 0; /* Controlado por JS para la alta frecuencia */
+            will-change: transform, opacity;
+        }
+
+        .night-ufo.js-fly {
+            animation: fly-ufo-js 12s linear forwards;
+        }
+        
+        .night-ufo-inner {
+            width: 100%; height: 100%;
+            background-image: url('https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/a_(saucer)_80.webp');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            animation: bob-ufo 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes fly-airplane-sync {
+            0%   { transform: translateX(-20vw); opacity: 0; }
+            3%   { opacity: 1; }
+            45%  { opacity: 1; }
+            50%  { transform: translateX(120vw); opacity: 0; }
+            100% { transform: translateX(120vw); opacity: 0; }
+        }
+
+        @keyframes fly-ufo-js {
+            0%   { transform: translateX(120vw); opacity: 0; }
+            10%  { opacity: 1; }
+            90%  { opacity: 1; }
+            100% { transform: translateX(-20vw); opacity: 0; }
+        }
+
+        @keyframes bob-ufo {
+            0%   { transform: translateY(-3px); }
+            100% { transform: translateY(3px); }
+        }
+
+        /* ========================================================
+           ARQUITECTURA DE LA CIUDAD (FIX FULLSCREEN CROP)
+           ======================================================== */
+        .cityscape {
+            position: absolute; 
+            bottom: 0; 
+            left: 50%;
+            transform: translateX(-50%);
+            /* Asegura que la imagen siempre cubra la pantalla sin achatarse ni cortarse verticalmente */
+            width: max(100vw, 160vh); 
+            z-index: 10; 
+            pointer-events: none;
+        }
+
+        .city-img {
+            width: 100%;
+            height: auto; /* Escala matemáticamente para nunca cortar la punta de los edificios */
+            display: block;
+            transition: opacity 1.5s ease;
+        }
+
+        .city-day { opacity: 1; }
+        
+        .city-night { 
+            position: absolute; 
+            top: 0; left: 0; 
+            opacity: 0; 
+        }
+
+        body:has(#dn-toggle:checked) .city-day { opacity: 0; }
+        body:has(#dn-toggle:checked) .city-night { opacity: 1; }
+
+        /* ========================================================
+           LOGO XAT EXTERNO (Anclado Matemáticamente)
+           ======================================================== */
+        .xat-logo {
+            position: absolute;
+            bottom: 59%; /* Subido ~20px (ajuste de 54% a 56%) */
+            right: 25.8%; /* Alineación perfecta con el edificio */
+            width: 4%; /* Escala de tamaño bloqueada a la imagen de la ciudad para no desfasarse jamás */
+            display: block;
+            z-index: 50; 
+            pointer-events: auto; /* Reactiva los clicks ignorados por cityscape */
+        }
+
+        .xat-logo img {
+            width: 100%; 
+            height: auto;
+            display: block;
+            transition: transform 0.3s ease;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); 
+        }
+
+        /* Hover exclusivo para PC (ignorado en pantallas táctiles) */
+        @media (hover: hover) {
+            .xat-logo:hover img {
+                transform: scale(1.08);
+            }
+        }
+
+        /* ========================================================
+           SISTEMA DE TRÁFICO Y VEHÍCULOS
+           ======================================================== */
+        .traffic-container {
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 100vw; height: 15vh;
+            z-index: 11;
+            pointer-events: none;
+        }
+
+        /* -- Bicicleta Animada (Día) -- */
+        .bicycle-wrapper {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 10; /* Detrás de los coches cercanos (11 y 12), frente al fondo (10) */
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 1.5s ease, visibility 1.5s;
+        }
+
+        body:has(#dn-toggle:checked) .bicycle-wrapper {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .bicycle {
+            position: absolute;
+            /* AJUSTE MANUAL ALTURA BICICLETA (Ej: entre 6.0vh y 9.0vh, o usando px fijos) */
+            bottom: 7vh; 
+            width: clamp(45px, 5vw, 75px); /* Escala más pequeña que coche */
+            height: clamp(35px, 4vw, 55px);
+            background-image: url('https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/a_(transport)_40.webp');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            animation: ride-bike 25s linear infinite; /* Movimiento más lento que los coches */
+            will-change: transform, opacity;
+        }
+
+        @keyframes ride-bike {
+            0%   { transform: translateX(-15vw) scaleX(-1); opacity: 0; }
+            5%   { opacity: 1; }
+            85%  { opacity: 1; } /* Fade out anticipado antes del borde */
+            100% { transform: translateX(115vw) scaleX(-1); opacity: 0; }
+        }
+
+        /* -- Coches -- */
+        .car {
+            position: absolute;
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+
+        .car::before, .car::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            transition: opacity 1.5s ease, visibility 1.5s;
+        }
+
+        .car::before { opacity: 1; visibility: visible; }
+        body:has(#dn-toggle:checked) .car::before { opacity: 0; visibility: hidden; }
+
+        .car::after { opacity: 0; visibility: hidden; }
+        body:has(#dn-toggle:checked) .car::after { opacity: 1; visibility: visible; }
+
+        .car-left {
+            bottom: 6vh;
+            width: clamp(90px, 10vw, 140px);
+            height: clamp(40px, 4.5vw, 65px);
+            z-index: 11;
+        }
+        .car-left::before { background-image: url('https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/Recurso%2013.png'); }
+        .car-left::after { background-image: url('https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/Recurso%2014.png'); }
+
+        .car-right {
+            bottom: 1.5vh;
+            width: clamp(110px, 12vw, 160px);
+            height: clamp(45px, 5.5vw, 75px);
+            z-index: 12;
+        }
+        .car-right::before { background-image: url('https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/Recurso%2012.png'); }
+        .car-right::after { background-image: url('https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/Recurso%2015.png'); }
+
+        /* ========================================================
+           ILUMINACIÓN Y FAROS PROFESIONALES (SVG FILTER)
+           ======================================================== */
+        .headlight-svg {
+            position: absolute;
+            top: 60%;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 1.5s ease, visibility 1.5s;
+            pointer-events: none;
+            z-index: -1;
+            mix-blend-mode: screen; 
+            overflow: visible; 
+        }
+
+        body:has(#dn-toggle:checked) .headlight-svg {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .car-left .headlight-svg {
+            left: 60%; 
+            width: 45vw; 
+            height: 22vw;
+            transform: translateY(-50%);
+        }
+
+        .car-right .headlight-svg {
+            right: 60%; 
+            width: 50vw; 
+            height: 25vw;
+            transform: translateY(-50%) scaleX(-1);
+        }
+
+        @keyframes drive-ltr {
+            0%   { transform: translateX(-30vw); opacity: 0; }
+            10%  { opacity: 1; }
+            90%  { opacity: 1; } 
+            100% { transform: translateX(130vw); opacity: 0; }
+        }
+
+        @keyframes drive-rtl {
+            0%   { transform: translateX(130vw); opacity: 0; }
+            10%  { opacity: 1; }
+            90%  { opacity: 1; } 
+            100% { transform: translateX(-30vw); opacity: 0; }
+        }
+
+        .cl-1 { animation: drive-ltr 14s linear infinite; }
+        .cl-2 { animation: drive-ltr 14s linear infinite 7s; }
+
+        .cr-1 { animation: drive-rtl 12s linear infinite; }
+        .cr-2 { animation: drive-rtl 12s linear infinite 6s; }
+
+        /* ========================================================
+           PANEL DE CONTROL HORIZONTAL
+           ======================================================== */
+        #toggle-panel:not(:checked) ~ #main-panel { max-width: 0; opacity: 0; pointer-events: none; padding: 0; border-width: 0; }
+        #toggle-panel:not(:checked) ~ #mini-open-btn { display: flex; opacity: 1; pointer-events: auto; }
+        #toggle-panel:checked ~ #mini-open-btn { display: none; opacity: 0; pointer-events: none; }
+
+        #mini-open-btn {
+            position: fixed; top: 65px; left: 0; width: 34px; height: 34px;
+            background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; border-radius: 6px;
+            cursor: pointer; justify-content: center; align-items: center;
+            font-size: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+            z-index: 2147483647; user-select: none; transition: background 0.2s, opacity 0.3s;
+        }
+
+        #mini-open-btn:hover { background: rgba(45, 45, 45, 1); }
+
+        #main-panel {
+            position: fixed; top: 65px; left: 0; width: max-content; height: 34px;
+            box-sizing: border-box; display: flex; align-items: center; gap: 15px;
+            padding: 0 10px 0 15px; background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px;
+            transition: max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, padding 0.4s;
+            opacity: 1; max-width: calc(100vw - 20px); overflow-x: auto; overflow-y: hidden; 
+            white-space: nowrap; box-shadow: 0 4px 15px rgba(0,0,0,0.8); scrollbar-width: none; 
+            z-index: 2147483647; 
+        }
+
+        #main-panel::-webkit-scrollbar { display: none; }
+
+        .control-group {
+            display: flex; align-items: center; gap: 8px; font-size: 11px; color: #ddd;
+            user-select: none; height: 100%; flex-shrink: 0; 
+        }
+
+        .label-text { font-weight: bold; color: #ddd; }
+
+        .toggle-track {
+            display: flex; align-items: center; justify-content: space-between;
+            width: 44px; height: 20px; background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 20px;
+            padding: 0 4px; cursor: pointer; position: relative; box-sizing: border-box;
+            transition: background 0.5s ease;
+        }
+
+        body:has(#dn-toggle:checked) .toggle-track { background: rgba(0, 0, 0, 0.6); border-color: rgba(255, 255, 255, 0.2); }
+
+        .toggle-icon { font-size: 10px; line-height: 1; z-index: 1; }
+
+        .toggle-thumb {
+            position: absolute; top: 2px; left: 2px; width: 14px; height: 14px;
+            background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+            transition: transform 0.4s cubic-bezier(0.4, 0.0, 0.2, 1); z-index: 2;
+        }
+
+        #dn-toggle:checked ~ #main-panel .toggle-thumb { transform: translateX(24px); }
+
+        .separator { width: 1px; height: 18px; background: rgba(255,255,255,0.25); margin: 0 2px; flex-shrink: 0; }
+
+        .info-tag { background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; color: #aaa; font-style: italic; }
+
+        #close-btn {
+            margin-left: auto; position: sticky; right: 0; width: 24px; height: 24px;
+            display: flex; justify-content: center; align-items: center;
+            background: rgba(255, 255, 255, 0.1); border-radius: 4px; cursor: pointer; 
+            font-size: 14px; font-weight: bold; color: #fff;
+            transition: background 0.2s, transform 0.2s; flex-shrink: 0; 
+        }
+
+        #close-btn:hover { background: rgba(255, 255, 255, 0.25); transform: scale(1.05); }
+
+        /* ========================================================
+           CORRECCIONES RESPONSIVE MÓVIL (Android / iOS)
+           ======================================================== */
+        @media (max-width: 768px) {
+            body, .scene {
+                width: 100vw;
+                height: 100vh;
+                height: 100dvh; /* Evita recortes usando el viewport dinámico real en móviles */
+                overflow: hidden;
+                /* El recorte visual ('camera framing') ocurre aquí: al mantener el 100vw,
+                   las partes de la ciudad que desbordan quedan ocultas automáticamente. */
+            }
+
+            /* ENCUADRE DE CÁMARA (Camera Framing): 
+               Eliminamos el scale destructivo para mantener las proporciones 1:1. 
+               Desplazamos hacia abajo para sacar la calle y los coches del encuadre. */
+            .cityscape {
+                bottom: -14vh; /* Empuja la calle fuera de la pantalla visible */
+                transform: translateX(-48%); /* Ajuste horizontal fino para centrar el bloque principal de edificios */
+                transform-origin: bottom center;
+            }
+
+            /* Mantenemos el tráfico alineado con la calle, por lo que también queda fuera de encuadre 
+               sin ser eliminado ni modificado en su lógica o animación. */
+            .traffic-container {
+                bottom: -14vh; /* Mismo valor que cityscape para que queden ocultos abajo */
+                transform: none; /* Quitamos reducción de tamaño */
+            }
+        }
+
+        /* CONTROL GLOBAL DE VISIBILIDAD (ZONAS DE SPAWN/DESPAWN) */
+        .fade-vehicle {
+            opacity: 0;
+            transition: opacity 1.4s cubic-bezier(0.4, 0, 0.2, 1); /* curva suave profesional */
+            will-change: opacity;
+        }
+
+        /* ACTIVO (visible) */
+        .fade-vehicle.visible {
+            opacity: 1;
+        }
+
+        /* ========================================================
+           SMILE EN BANCA (Solo Noche)
+           ======================================================== */
+        .smile-bench {
+            position: absolute;
+
+            /* AJUSTE FINO (coordenadas fijas en píxeles dentro del contenedor) */
+            bottom: 56px;
+            left: 86px;
+
+            width: 38px;
+            height: auto;
+
+            pointer-events: none;
+            user-select: none;
+
+            opacity: 0;
+            transform: translateY(6px) scale(0.95);
+
+            transition: 
+                opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+                
+            z-index: 15; /* Asegura que quede visible sobre la acera */
+        }
+
+        /* SOLO NOCHE (Enlazado al checkbox oculto original) */
+        body:has(#dn-toggle:checked) .smile-bench {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- LÓGICA OCULTA -->
+    <input type="checkbox" id="toggle-panel" checked>
+    <input type="checkbox" id="dn-toggle">
+
+    <!-- BOTÓN DE REAPERTURA -->
+    <label for="toggle-panel" id="mini-open-btn" title="Mostrar Panel">≡</label>
+
+    <!-- PANEL PRINCIPAL -->
+    <div id="main-panel">
+        <div class="control-group">
+            <span class="label-text">Tiempo:</span>
+            <label for="dn-toggle" class="toggle-track" title="Alternar Día/Noche">
+                <span class="toggle-icon">☀️</span>
+                <span class="toggle-icon">🌙</span>
+                <div class="toggle-thumb"></div>
+            </label>
+        </div>
+        <div class="separator"></div>
+        <div class="control-group">
+            <span class="info-tag">Xat.com</span>
+        </div>
+        <label for="toggle-panel" id="close-btn" title="Ocultar controles">❯</label>
+    </div>
+
+    <!-- ESCENA CIUDAD -->
+    <div class="scene">
+        
+        <!-- ========================================================
+             LIBRERÍA DE FILTROS SVG (Global, oculto)
+             ======================================================== -->
+        <svg style="width:0; height:0; position:absolute; visibility:hidden;" aria-hidden="true" focusable="false">
+            <defs>
+                <filter id="beamBlur" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="20" />
+                </filter>
+                
+                <radialGradient id="beamGrad" cx="0%" cy="50%" r="100%">
+                    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+                    <stop offset="20%" stop-color="#fff5cc" stop-opacity="0.6" />
+                    <stop offset="50%" stop-color="#ffe885" stop-opacity="0.15" />
+                    <stop offset="80%" stop-color="#ffe885" stop-opacity="0" />
+                    <stop offset="100%" stop-color="#ffe885" stop-opacity="0" />
+                </radialGradient>
+            </defs>
+        </svg>
+
+        <!-- Cielo base -->
+        <div class="celestial-sun"></div>
+        <div class="celestial-moon"></div>
+
+        <!-- 1. Sistema de Estrellas (Noche) -->
+        <div class="stars-container">
+            <div class="star-layer stars-xs"></div>
+            <div class="star-layer stars-sm"></div>
+            <div class="star-layer stars-md"></div>
+            <div class="star-layer stars-lg"></div>
+        </div>
+        
+        <!-- 2. Nubes Fotorealistas (Día) -->
+        <div class="clouds-img-container">
+            <div class="cloud-img c-img-1"></div>
+            <div class="cloud-img c-img-2"></div>
+            <div class="cloud-img c-img-3"></div>
+            <div class="cloud-img c-img-4"></div>
+            <div class="cloud-img c-img-5"></div>
+            <div class="cloud-img c-img-6"></div>
+            <div class="cloud-img c-img-7"></div>
+            <div class="cloud-img c-img-8"></div>
+        </div>
+
+        <!-- 2.5 Nubes Fotorealistas (Noche) -->
+        <div class="night-clouds-container">
+            <div class="night-cloud nc-1"></div>
+            <div class="night-cloud nc-2"></div>
+            <div class="night-cloud nc-3"></div>
+            <div class="night-cloud nc-4"></div>
+        </div>
+
+        <!-- 3. Bandadas de Pájaros CSS (Día) -->
+        <div class="birds-container">
+            <div class="bird-group flock-1" style="--s: 1;">
+                <div class="bird" style="top: 0px; left: 0px;"></div>
+                <div class="bird" style="top: -15px; left: -20px;"></div>
+                <div class="bird" style="top: 15px; left: -25px;"></div>
+            </div>
+            <div class="bird-group flock-2" style="--s: 0.6;">
+                <div class="bird" style="top: 0px; left: 0px;"></div>
+                <div class="bird" style="top: 10px; left: -15px;"></div>
+            </div>
+            <div class="bird-group flock-3" style="--s: 0.8;">
+                <div class="bird" style="top: 0px; left: 0px;"></div>
+                <div class="bird" style="top: -20px; left: -30px;"></div>
+                <div class="bird" style="top: 10px; left: -40px;"></div>
+                <div class="bird" style="top: 25px; left: -20px;"></div>
+            </div>
+        </div>
+
+        <!-- 3.5 Globo Aerostático (Día - Evento Aleatorio) -->
+        <div class="day-balloon-wrapper">
+            <div class="day-balloon">
+                <div class="day-balloon-inner"></div>
+            </div>
+        </div>
+
+        <!-- 3.8 Avión y OVNI (Noche - Eventos Excluyentes y Sincronizados) -->
+        <div class="night-air-wrapper">
+            <!-- Avión (Aparece en la primera mitad del ciclo) -->
+            <div class="night-airplane"></div>
+            
+            <!-- OVNI (Aparece en la segunda mitad del ciclo) -->
+            <div class="night-ufo">
+                <div class="night-ufo-inner"></div>
+            </div>
+        </div>
+
+        <!-- Edificios (Imágenes ajustadas a proporción estricta para evitar recortes) -->
+        <div class="cityscape">
+            <img class="city-img city-day" src="https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/cityday.png" alt="Ciudad de día">
+            <img class="city-img city-night" src="https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/citynight.png" alt="Ciudad de noche">
+            
+            <!-- 3.9 Smile en banca (Modo Noche) - Anclado en px al contenedor -->
+            <img 
+              src="https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/a_(telescope)_40.webp" 
+              class="smile-bench"
+              alt="Telescopio en banca"
+            />
+            
+            <!-- 5. Logo XAT (Agrupado en el cityscape y anclado con % matemáticos para fijarlo al edificio) -->
+            <a href="https://xat.com" target="_blank" rel="noopener noreferrer" class="xat-logo">
+                <img src="https://raw.githubusercontent.com/eamxat/Images/7af4ec4622f89c3c332964539fc5991e7a6050bd/xatlogo%20text2.svg" alt="XAT Logo">
+            </a>
+        </div>
+
+        <!-- 4. Sistema de Tráfico (Vehículos) -->
+        <div class="traffic-container">
+            
+            <!-- Bicicleta Animada (Alineada en la acera) -->
+            <div class="bicycle-wrapper">
+                <div class="bicycle"></div>
+            </div>
+
+            <!-- Coches Carril Izquierdo (Alejado) -->
+            <div class="car car-left cl-1">
+                <svg class="headlight-svg" viewBox="0 0 800 400" preserveAspectRatio="none" overflow="visible">
+                    <ellipse cx="400" cy="200" rx="300" ry="100" fill="url(#beamGrad)" filter="url(#beamBlur)" />
+                </svg>
+            </div>
+            <div class="car car-left cl-2">
+                <svg class="headlight-svg" viewBox="0 0 800 400" preserveAspectRatio="none" overflow="visible">
+                    <ellipse cx="400" cy="200" rx="300" ry="100" fill="url(#beamGrad)" filter="url(#beamBlur)" />
+                </svg>
+            </div>
+
+            <!-- Coches Carril Derecho (Cercano) -->
+            <div class="car car-right cr-1">
+                <svg class="headlight-svg" viewBox="0 0 800 400" preserveAspectRatio="none" overflow="visible">
+                    <ellipse cx="400" cy="200" rx="300" ry="100" fill="url(#beamGrad)" filter="url(#beamBlur)" />
+                </svg>
+            </div>
+            <div class="car car-right cr-2">
+                <svg class="headlight-svg" viewBox="0 0 800 400" preserveAspectRatio="none" overflow="visible">
+                    <ellipse cx="400" cy="200" rx="300" ry="100" fill="url(#beamGrad)" filter="url(#beamBlur)" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de protección y sistema dinámico de spawn (Globo/OVNI) -->
+    <script>
+        // --- 1. PROTECCIÓN BÁSICA CONTRA ROBO ---
+        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+        document.addEventListener('keydown', function(e) {
+            if (
+                e.key === 'F12' || 
+                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) || 
+                (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's'))
+            ) { e.preventDefault(); }
+        });
+
+        // --- 2. SISTEMA DE EVENTOS DINÁMICOS JS (Globo y OVNI) ---
+        // Se utiliza JS para cumplir estrictamente con los intervalos de evaluación (5-10s / 10-18s) 
+        // y la probabilidad exacta, manteniendo la animación procesada por CSS de forma natural.
+        (function() {
+            const balloon = document.querySelector('.day-balloon');
+            const ufo = document.querySelector('.night-ufo');
+            const airplane = document.querySelector('.night-airplane');
+
+            // Lógica para Globo
+            function runBalloonLogic() {
+                // Intervalo de evaluación: de 5 a 10 segundos
+                const delay = Math.random() * 5000 + 5000;
+                setTimeout(() => {
+                    // Probabilidad: ~85% (entre 80 y 90%)
+                    if (Math.random() <= 0.85) {
+                        // Varía ligeramente la posición y escala para mayor naturalidad
+                        const startX = 15 + Math.random() * 50; 
+                        const scale = 0.8 + Math.random() * 0.4;
+                        
+                        balloon.style.setProperty('--startX', `${startX}vw`);
+                        balloon.style.setProperty('--bScale', scale);
+                        
+                        // Añadir la clase para iniciar el vuelo
+                        balloon.classList.add('js-fly');
+                        
+                        // El vuelo dura exactamente 15s. Esperar a que desaparezca por completo para volver a evaluar.
+                        setTimeout(() => {
+                            balloon.classList.remove('js-fly');
+                            runBalloonLogic();
+                        }, 15000);
+                    } else {
+                        // Si falla la probabilidad, se vuelve a evaluar
+                        runBalloonLogic();
+                    }
+                }, delay);
+            }
+
+            // Lógica para OVNI
+            function runUFOLogic() {
+                // Intervalo de evaluación: de 10 a 18 segundos
+                const delay = Math.random() * 8000 + 10000;
+                setTimeout(() => {
+                    // Probabilidad: ~78% (entre 70 y 85%)
+                    if (Math.random() <= 0.78) {
+                        let isSafeToFly = true; 
+                        const anims = airplane.getAnimations();
+                        
+                        // Validar con exactitud el estado del ciclo del avión en CSS (80s).
+                        if (anims.length > 0 && anims[0].currentTime !== null) {
+                            const currentTime = anims[0].currentTime % 80000;
+                            // El avión es visible desde el ms 0 hasta el ms 40000.
+                            // El OVNI necesita 12000ms para cruzar la pantalla completo.
+                            // Restringimos el OVNI a salir SOLO cuando sepamos que terminará de volar antes de que el avión reaparezca.
+                            if (currentTime <= 40000 || currentTime >= 67000) {
+                                isSafeToFly = false;
+                            }
+                        }
+
+                        if (isSafeToFly) {
+                            ufo.classList.add('js-fly');
+                            // El vuelo dura 12s. Una vez termina, se remueve la clase y se retoma la evaluación.
+                            setTimeout(() => {
+                                ufo.classList.remove('js-fly');
+                                runUFOLogic();
+                            }, 12000);
+                            return; // Prevenir ciclo duplicado
+                        }
+                    }
+                    // Si falla la probabilidad o no es seguro por el avión, reevaluar.
+                    runUFOLogic();
+                }, delay);
+            }
+
+            // Arrancar los sistemas al inicio
+            runBalloonLogic();
+            runUFOLogic();
+
+            // --- 3. SISTEMA DE SPAWN/DESPAWN (Control de visibilidad) ---
+            const cars = document.querySelectorAll('.car');
+            const bike = document.querySelector('.bicycle');
+
+            // Añadir las clases base de forma programática (tal y como se requirió)
+            cars.forEach(car => car.classList.add('fade-vehicle'));
+            if (bike) bike.classList.add('fade-vehicle');
+
+            const FADE_ZONE = 120; // distancia de fade en px desde bordes
+
+            function updateCarVisibility(car) {
+                const rect = car.getBoundingClientRect();
+                const screenWidth = window.innerWidth;
+
+                let opacity = 1;
+
+                // Fade izquierda
+                if (rect.left < FADE_ZONE) {
+                    opacity = rect.left / FADE_ZONE;
+                }
+
+                // Fade derecha
+                if (rect.right > screenWidth - FADE_ZONE) {
+                    opacity = (screenWidth - rect.right) / FADE_ZONE;
+                }
+
+                opacity = Math.max(0, Math.min(1, opacity));
+
+                // Usamos 'important' para asegurar que sobreescriba la opacidad del @keyframes
+                car.style.setProperty('opacity', opacity, 'important');
+            }
+
+            function updateBikeVisibility(bike) {
+                const rect = bike.getBoundingClientRect();
+                const screenWidth = window.innerWidth;
+
+                const fadeStart = screenWidth * 0.85;
+                const fadeRange = screenWidth * 0.15;
+
+                let opacity = 1;
+
+                if (rect.left > fadeStart) {
+                    opacity = 1 - ((rect.left - fadeStart) / fadeRange);
+                }
+
+                if (rect.left < 60) {
+                    opacity = rect.left / 60;
+                }
+
+                opacity = Math.max(0, Math.min(1, opacity));
+
+                // Usamos 'important' para asegurar que sobreescriba la opacidad del @keyframes
+                bike.style.setProperty('opacity', opacity, 'important');
+            }
+
+            // Bucle del motor de renderizado para detectar frames
+            function monitorVehicles() {
+                cars.forEach(car => updateCarVisibility(car));
+                if (bike) updateBikeVisibility(bike);
+                
+                requestAnimationFrame(monitorVehicles); // Llamada frame a frame
+            }
+
+            // Iniciar el monitoreo espacial
+            requestAnimationFrame(monitorVehicles);
+
+        })();
+    </script>
+</body>
+</html>
