@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xat Glass</title>
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/favicon-16x16.png">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+ 
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+ 
+        #ui-layer {
+            position: absolute;
+            top: 62px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            max-width: 1303px;
+            display: flex;
+            gap: 12px;
+            z-index: 10;
+            align-items: center;
+        }
+ 
+        #toggle-btn {
+            width: 38px;
+            height: 38px;
+            flex-shrink: 0;
+            background: rgba(23, 31, 44, 0.45); 
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+ 
+        #toggle-btn:hover {
+            background: rgba(23, 31, 44, 0.65);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+ 
+        #controls-container {
+            height: 38px;
+            background: rgba(23, 31, 44, 0.45); 
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            box-sizing: border-box;
+            color: #cbd5e1;
+            gap: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+ 
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: none; 
+            width: 100%;
+        }
+ 
+        #controls-container::-webkit-scrollbar {
+            display: none; 
+        }
+ 
+        #controls-container.hidden {
+            width: 0px;
+            padding: 0;
+            opacity: 0;
+            border-color: transparent;
+            pointer-events: none;
+            gap: 0;
+        }
+ 
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+ 
+        input[type=range] {
+            -webkit-appearance: none; 
+            appearance: none;
+            width: 110px;
+            background: transparent;
+            cursor: pointer;
+        }
+ 
+        input[type=range]:focus {
+            outline: none;
+        }
+ 
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+ 
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 14px;
+            width: 14px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            margin-top: -5px; 
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+ 
+        input[type=range]::-moz-range-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+ 
+        input[type=range]::-moz-range-thumb {
+            height: 14px;
+            width: 14px;
+            border: none; 
+            border-radius: 50%;
+            background: #cbd5e1;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+ 
+        .color-presets {
+            display: flex;
+            gap: 8px;
+            margin-left: 4px;
+        }
+ 
+        .color-preset {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+ 
+        .color-preset:hover {
+            transform: scale(1.15);
+        }
+ 
+        .color-preset.active {
+            border-color: #fff;
+            transform: scale(1.1);
+        }
+ 
+        .preset-blue { background: linear-gradient(135deg, #0ea5e9, #2563eb); }
+        .preset-purple { background: linear-gradient(135deg, #a855f7, #7e22ce); }
+        .preset-orange { background: linear-gradient(135deg, #f97316, #ea580c); }
+        .preset-green { background: linear-gradient(135deg, #22c55e, #16a34a); }
+        .preset-pink { background: linear-gradient(135deg, #f43f5e, #be123c); }
+ 
+        #xat-logo {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            z-index: 20;
+            opacity: 0.4; 
+            transition: opacity 0.3s ease; 
+            display: block;
+        }
+ 
+        #xat-logo img {
+            height: 35px; 
+            width: auto;
+            display: block;
+        }
+ 
+        #xat-logo:hover {
+            opacity: 1; 
+        }
+    </style>
+</head>
+<body>
+    <div id="ui-layer">
+        <button id="toggle-btn" title="Ocultar/Mostrar Controles">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
+ 
+        <div id="controls-container">
+            <div class="control-group">
+                <span>Color</span>
+                <div class="color-presets">
+                    <div class="color-preset preset-blue active" data-hue="215" title="Azul"></div>
+                    <div class="color-preset preset-purple" data-hue="280" title="Morado"></div>
+                    <div class="color-preset preset-pink" data-hue="330" title="Rosa"></div>
+                    <div class="color-preset preset-orange" data-hue="25" title="Naranja"></div>
+                    <div class="color-preset preset-green" data-hue="135" title="Verde"></div>
+                </div>
+            </div>
+            <div class="control-group">
+                <span>Velocidad</span>
+                <input type="range" id="speedControl" min="0.1" max="2" step="0.1" value="0.3" title="Lenta a Media">
+            </div>
+            <div class="control-group">
+                <span>Zoom</span>
+                <input type="range" id="zoomControl" min="0.2" max="3" step="0.1" value="1">
+            </div>
+            <div class="control-group">
+                <span>Brillo</span>
+                <input type="range" id="brightnessControl" min="0.1" max="2" step="0.1" value="0.5">
+            </div>
+            <div class="control-group">
+                <span>Contraste</span>
+                <input type="range" id="contrastControl" min="0.1" max="3" step="0.1" value="1">
+            </div>
+        </div>
+    </div>
+ 
+    <a id="xat-logo" href="https://xat.com" target="_blank" title="Visitar xat.com">
+        <img src="https://raw.githubusercontent.com/eamxat/Images/eadff6fb6a652a50f58fe4e9445e00a0b23f23d5/xatlogo%20text2.svg" alt="xat logo">
+    </a>
+ 
+    <canvas id="glcanvas"></canvas>
+ 
+    <script>
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+ 
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || e.keyCode === 123) {
+                e.preventDefault();
+            }
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.keyCode === 73)) {
+                e.preventDefault();
+            }
+            if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j' || e.keyCode === 74)) {
+                e.preventDefault();
+            }
+            if (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.keyCode === 85)) {
+                e.preventDefault();
+            }
+        });
+ 
+        const canvas = document.getElementById('glcanvas');
+        const gl = canvas.getContext('webgl');
+ 
+        if (!gl) {
+            alert('Tu navegador no soporta WebGL');
+        }
+ 
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if(gl) gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+ 
+        const vsSource = `
+            attribute vec2 a_position;
+            void main() {
+                gl_Position = vec4(a_position, 0.0, 1.0);
+            }
+        `;
+ 
+        const fsSource = `
+            #ifdef GL_FRAGMENT_PRECISION_HIGH
+                precision highp float;
+            #else
+                precision mediump float;
+            #endif
+ 
+            uniform float u_time;
+            uniform vec2 u_resolution;
+            uniform float u_hue;
+            uniform float u_zoom;
+            uniform float u_brightness;
+            uniform float u_contrast;
+ 
+            const mat2 myt = mat2(.12121212, .13131313, -.13131313, .12121212);
+            const vec2 mys = vec2(1e4, 1e6);
+ 
+            vec2 rhash(vec2 uv) {
+                uv *= myt;
+                uv *= mys;
+                return fract(fract(uv / mys) * uv);
+            }
+ 
+            vec3 hash(vec3 p) {
+                return fract(
+                    sin(vec3(dot(p, vec3(1.0, 57.0, 113.0)), dot(p, vec3(57.0, 113.0, 1.0)),
+                             dot(p, vec3(113.0, 1.0, 57.0)))) *
+                    43758.5453);
+            }
+ 
+            vec3 voronoi3d(const in vec3 x) {
+                vec3 p = floor(x);
+                vec3 f = fract(x);
+ 
+                float id = 0.0;
+                vec2 res = vec2(100.0);
+                for (int k = 0; k <= 2; k++) {
+                    for (int j = 0; j <= 2; j++) {
+                        for (int i = 0; i <= 2; i++) {
+                            vec3 b = vec3(float(i) - 1.0, float(j) - 1.0, float(k) - 1.0);
+                            vec3 r = vec3(b) - f + hash(p + b);
+                            float d = dot(r, r);
+ 
+                            float cond = max(sign(res.x - d), 0.0);
+                            float nCond = 1.0 - cond;
+ 
+                            float cond2 = nCond * max(sign(res.y - d), 0.0);
+                            float nCond2 = 1.0 - cond2;
+ 
+                            id = (dot(p + b, vec3(1.0, 57.0, 113.0)) * cond) + (id * nCond);
+                            res = vec2(d, res.x) * cond + res * nCond;
+ 
+                            res.y = cond2 * d + nCond2 * res.y;
+                        }
+                    }
+                }
+ 
+                return vec3(sqrt(res), abs(id));
+            }
+ 
+            vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
+ 
+            float snoise(vec2 v) {
+                const vec4 C = vec4(0.211324865405187, 0.366025403784439,
+                         -0.577350269189626, 0.024390243902439);
+                vec2 i  = floor(v + dot(v, C.yy) );
+                vec2 x0 = v -   i + dot(i, C.xx);
+                vec2 i1;
+                i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+                vec4 x12 = x0.xyxy + C.xxzz;
+                x12.xy -= i1;
+                i = mod(i, 289.0);
+                vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 ))
+                + i.x + vec3(0.0, i1.x, 1.0 ));
+                vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy),
+                  dot(x12.zw,x12.zw)), 0.0);
+                m = m*m ;
+                m = m*m ;
+                vec3 x = 2.0 * fract(p * C.www) - 1.0;
+                vec3 h = abs(x) - 0.5;
+                vec3 ox = floor(x + 0.5);
+                vec3 a0 = x - ox;
+                m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+                vec3 g;
+                g.x  = a0.x  * x0.x  + h.x  * x0.y;
+                g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+                return 130.0 * dot(m, g);
+            }
+ 
+            vec3 hsv2rgb(vec3 c) {
+                vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+                vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+                return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+            }
+ 
+            vec3 hsv2rgb_vals(float h, float s, float v) {
+                return hsv2rgb(vec3(h / 360., s / 100., v / 100.));
+            }
+ 
+            vec3 getBGColor(vec2 background) {
+                float hue = snoise(background * 0.5) * 20. + u_hue; 
+                float saturation = snoise(background * -0.75) * 20. + 80.;
+                float value = snoise(background) * 25. + 75.;
+                return hsv2rgb_vals(hue, saturation, value);
+            }
+ 
+            float hashFloat(float val) {
+                return fract(sin(val * 12.9898) * 43758.5453);
+            }
+ 
+            vec3 getRayColor(vec3 originalPosition) {
+                float br = 1.0;
+                highp vec3 finalColor = vec3(0.);
+ 
+                vec3 position = originalPosition;
+ 
+                float divide = 0.;
+ 
+                for (int i = 0; i < 6; i++) {
+                    vec3 voronoi = voronoi3d(position);
+                    br *= 0.75 + voronoi.x * 1.;
+                    vec3 depthColor = getBGColor(position.xy) * br;
+                    vec3 depthColorPosition = vec3(hashFloat(voronoi.z) * 10000., hashFloat(voronoi.z + 1.) * 10000., hashFloat(voronoi.z + 2.) * 10000.);
+                    depthColorPosition += originalPosition * pow(1.5, float(i));
+                    position = depthColorPosition;
+ 
+                    float mult = 0.;
+                    if (i > 0) {
+                        mult = pow(0.7, float(i));
+                    }
+ 
+                    finalColor += depthColor * mult;
+                    divide += mult;
+                }
+ 
+                finalColor /= divide;
+ 
+                return finalColor;
+            }
+ 
+            void main() {
+                float scale = min(u_resolution.x, u_resolution.y) * u_zoom;
+ 
+                vec3 color = getRayColor(vec3(gl_FragCoord.xy / vec2(scale) - u_resolution / vec2(scale), u_time / -5.) + vec3(sin(u_time / 30.) * 10., cos(u_time / 30.) * 10., 0.0));
+ 
+                color = mix(vec3(0.5), color, u_contrast);
+ 
+                color *= u_brightness;
+ 
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `;
+ 
+        function compileShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+ 
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+ 
+        if(gl) {
+            const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vsSource);
+            const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fsSource);
+ 
+            const shaderProgram = gl.createProgram();
+            gl.attachShader(shaderProgram, vertexShader);
+            gl.attachShader(shaderProgram, fragmentShader);
+            gl.linkProgram(shaderProgram);
+ 
+            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                console.error('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
+            }
+ 
+            gl.useProgram(shaderProgram);
+ 
+            const positionBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            const positions = [
+                -1.0,  1.0,
+                 1.0,  1.0,
+                -1.0, -1.0,
+                 1.0, -1.0,
+            ];
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+ 
+            const positionAttributeLocation = gl.getAttribLocation(shaderProgram, 'a_position');
+            gl.enableVertexAttribArray(positionAttributeLocation);
+            gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+ 
+            const uTimeLocation = gl.getUniformLocation(shaderProgram, 'u_time');
+            const uResolutionLocation = gl.getUniformLocation(shaderProgram, 'u_resolution');
+            const uHueLocation = gl.getUniformLocation(shaderProgram, 'u_hue');
+            const uZoomLocation = gl.getUniformLocation(shaderProgram, 'u_zoom');
+            const uBrightnessLocation = gl.getUniformLocation(shaderProgram, 'u_brightness');
+            const uContrastLocation = gl.getUniformLocation(shaderProgram, 'u_contrast');
+ 
+            let currentHue = 215.0;
+            let currentSpeed = 0.3;
+            let currentZoom = 1.0;
+            let currentBrightness = 0.5;
+            let currentContrast = 1.0;
+ 
+            let savedConfig = null;
+            try {
+                savedConfig = localStorage.getItem('xatGlassConfig');
+            } catch (e) {
+                console.warn('Local storage access denied. This is normal inside an iframe sandbox like XATFRAME.');
+            }
+ 
+            if (savedConfig) {
+                try {
+                    const saved = JSON.parse(savedConfig);
+                    if (saved.hue !== undefined) currentHue = saved.hue;
+                    if (saved.speed !== undefined) currentSpeed = saved.speed;
+                    if (saved.zoom !== undefined) currentZoom = saved.zoom;
+                    if (saved.brightness !== undefined) currentBrightness = saved.brightness;
+                    if (saved.contrast !== undefined) currentContrast = saved.contrast;
+                } catch (e) { console.error('Error cargando config', e); }
+            }
+ 
+            document.getElementById('speedControl').value = currentSpeed;
+            document.getElementById('zoomControl').value = currentZoom;
+            document.getElementById('brightnessControl').value = currentBrightness;
+            document.getElementById('contrastControl').value = currentContrast;
+ 
+            function saveConfig() {
+                try {
+                    localStorage.setItem('xatGlassConfig', JSON.stringify({
+                        hue: currentHue,
+                        speed: currentSpeed,
+                        zoom: currentZoom,
+                        brightness: currentBrightness,
+                        contrast: currentContrast
+                    }));
+                } catch(e) {
+                }
+            }
+ 
+            let lastRenderTime = 0;
+            let shaderTime = 0;
+ 
+            const toggleBtn = document.getElementById('toggle-btn');
+            const controlsContainer = document.getElementById('controls-container');
+            toggleBtn.addEventListener('click', () => {
+                controlsContainer.classList.toggle('hidden');
+            });
+ 
+            const colorPresets = document.querySelectorAll('.color-preset');
+ 
+            colorPresets.forEach(p => {
+                p.classList.remove('active');
+                if (parseFloat(p.getAttribute('data-hue')) === currentHue) {
+                    p.classList.add('active');
+                }
+            });
+ 
+            colorPresets.forEach(preset => {
+                preset.addEventListener('click', (e) => {
+                    colorPresets.forEach(p => p.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentHue = parseFloat(e.target.getAttribute('data-hue'));
+                    saveConfig();
+                });
+            });
+ 
+            document.getElementById('speedControl').addEventListener('input', (e) => { currentSpeed = parseFloat(e.target.value); saveConfig(); });
+            document.getElementById('zoomControl').addEventListener('input', (e) => { currentZoom = parseFloat(e.target.value); saveConfig(); });
+            document.getElementById('brightnessControl').addEventListener('input', (e) => { currentBrightness = parseFloat(e.target.value); saveConfig(); });
+            document.getElementById('contrastControl').addEventListener('input', (e) => { currentContrast = parseFloat(e.target.value); saveConfig(); });
+ 
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+ 
+            function render(time) {
+                let delta = (time - lastRenderTime) * 0.001;
+                lastRenderTime = time;
+ 
+                shaderTime += delta * currentSpeed;
+ 
+                gl.clear(gl.COLOR_BUFFER_BIT);
+ 
+                gl.uniform1f(uTimeLocation, shaderTime);
+                gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
+                gl.uniform1f(uHueLocation, currentHue);
+                gl.uniform1f(uZoomLocation, currentZoom);
+                gl.uniform1f(uBrightnessLocation, currentBrightness);
+                gl.uniform1f(uContrastLocation, currentContrast);
+ 
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+ 
+                requestAnimationFrame(render);
+            }
+ 
+            requestAnimationFrame((time) => {
+                lastRenderTime = time;
+                render(time);
+            });
+        }
+    </script>
+</body>
+</html>
