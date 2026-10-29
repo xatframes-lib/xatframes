@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#110524">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Hallow Xatframe</title>
+<link rel="icon" type="image/png" sizes="16x16" href="https://raw.githubusercontent.com/eamxat/Hallow-/refs/heads/main/favicon-16x16.png">
+<link rel="shortcut icon" type="image/png" href="https://raw.githubusercontent.com/eamxat/Hallow-/refs/heads/main/favicon-16x16.png">
+<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/eamxat/Hallow-/refs/heads/main/favicon-16x16.png">
+<style>
+  :root {
+    --bg-exterior: #110524; --cw: 2870; --ch: 1425;
+    /* 1 px del lienzo maestro en px de pantalla: movimientos y brillos escalan con la escena */
+    --u: calc(min(100vw, 100vh * var(--cw) / var(--ch)) / var(--cw));
+  }
+  @supports (height: 100dvh) {
+    :root {
+      --u: calc(min(100dvw, 100dvh * var(--cw) / var(--ch)) / var(--cw));
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg-exterior); }
+  body { display: flex; justify-content: center; align-items: center; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
+
+  /* LIENZO MAESTRO 2870 Ã— 1425 (proporciÃ³n de backgroundcolor.png). Su color de fondo es el del PNG original. */
+  #scene { position: relative; width: min(100vw, calc(100vh * var(--cw) / var(--ch))); height: min(100vh, calc(100vw * var(--ch) / var(--cw))); aspect-ratio: var(--cw) / var(--ch); overflow: hidden; touch-action: manipulation; background: #110524; transform: translateZ(0); -webkit-transform: translateZ(0); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  @supports (height: 100dvh) {
+    #scene { width: min(100dvw, calc(100dvh * var(--cw) / var(--ch))); height: min(100dvh, calc(100dvw * var(--ch) / var(--cw))); }
+  }
+  #scene > * { position: absolute; display: block; pointer-events: none; user-select: none; -webkit-user-select: none; -moz-user-select: none; -webkit-user-drag: none; }
+  #scene img { -webkit-user-drag: none; user-select: none; -webkit-user-select: none; }
+
+  /* ---------- LUNA: glow pequeÃ±o y vibrante (late); el halo se recorta a la forma del cielo ---------- */
+  .moon img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; animation: moonGlow 2.8s ease-in-out infinite alternate; }
+  @keyframes moonGlow {
+    from { filter: brightness(1)    drop-shadow(0 0 calc(var(--u) * 8)  rgba(255,244,170,.85)) drop-shadow(0 0 calc(var(--u) * 20) rgba(255,232,140,.55)); }
+    to   { filter: brightness(1.12) drop-shadow(0 0 calc(var(--u) * 14) rgba(255,250,200,1))   drop-shadow(0 0 calc(var(--u) * 34) rgba(255,236,150,.85)); }
+  }
+  .moonhalo { position: absolute; pointer-events: none; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; }
+  .moonhalo i { position: absolute; inset: 0; display: block; transform-origin: var(--cx) var(--cy); animation: haloPulse 2.8s ease-in-out infinite alternate;
+    background: radial-gradient(circle calc(var(--u) * 170) at var(--cx) var(--cy), rgba(255,247,200,.95) 0%, rgba(255,236,150,.6) 24%, rgba(255,226,140,.22) 54%, rgba(255,220,130,0) 100%); }
+  @keyframes haloPulse { from { opacity: .6; transform: scale(.9); } to { opacity: 1; transform: scale(1.12); } }
+
+  /* ---------- NUBES: deriva lateral sutil ---------- */
+  .cloud { animation: cloudDrift var(--dur) ease-in-out var(--delay) infinite; }
+  @keyframes cloudDrift {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(calc(var(--u) * 48)); }
+    75% { transform: translateX(calc(var(--u) * -48)); }
+  }
+
+  /* ---------- MURCIÃ‰LAGOS: aleteo del cuerpo entero (sin partirlo) + vuelo dinÃ¡mico ---------- */
+  /* Capa 1: Desplazamiento amplio en X/Y, rotaciÃ³n (inclinaciÃ³n) y escala (profundidad Z) */
+  .bat .drift { position: absolute; inset: 0; animation: batFly var(--fly) cubic-bezier(0.45, 0, 0.55, 1) var(--delay) infinite; will-change: transform; }
+  /* Capa 2: Un "flote" vertical suave e independiente para dar sensaciÃ³n orgÃ¡nica */
+  .bat .body  { position: absolute; inset: 0; animation: batBob 4.1s ease-in-out var(--delay) infinite alternate; will-change: transform; }
+  /* Capa 3: El aleteo rÃ¡pido y seco del sprite (aplastamiento en Y y pequeÃ±o bote vertical) */
+  .bat img    { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 50% 50%; animation: batBeat var(--dur) linear var(--delay) infinite; will-change: transform; }
+  
+  /* Aleteo ultra-realista con SVG: las alas se pliegan (scaleX) y empujan hacia abajo (scaleY) */
+  @keyframes batBeat {
+    0%   { transform: scale(1, 1) translateY(0); }
+    4%   { transform: scale(0.4, 1.1) translateY(-8%); } /* Cierra alas (hacia arriba) */
+    8%   { transform: scale(1.05, 0.8) translateY(4%); } /* Abre alas y empuja hacia abajo */
+    12%  { transform: scale(0.4, 1.1) translateY(-8%); }
+    16%  { transform: scale(1.05, 0.8) translateY(4%); }
+    20%  { transform: scale(0.4, 1.1) translateY(-8%); }
+    24%  { transform: scale(1, 1) translateY(0); }       /* Planeo */
+    100% { transform: scale(1, 1) translateY(0); }
+  }
+  
+  /* Trayectoria de vuelo mÃ¡s errÃ¡tica y natural, imitando cazadores nocturnos */
+  @keyframes batFly {
+    0%   { transform: translate(0, 0) rotate(0deg) scale(1); }
+    15%  { transform: translate(calc(var(--u) * 90), calc(var(--u) * -70)) rotate(20deg) scale(1.1); }
+    35%  { transform: translate(calc(var(--u) * 220), calc(var(--u) * -15)) rotate(-10deg) scale(0.9); }
+    55%  { transform: translate(calc(var(--u) * 170), calc(var(--u) * 90)) rotate(-25deg) scale(0.85); }
+    75%  { transform: translate(calc(var(--u) * 30), calc(var(--u) * 45)) rotate(15deg) scale(1.05); }
+    90%  { transform: translate(calc(var(--u) * -15), calc(var(--u) * -15)) rotate(-5deg) scale(0.98); }
+    100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  }
+  
+  /* Flote vertical con una pizca de rotaciÃ³n extra para mÃ¡s fluidez */
+  @keyframes batBob {
+    0%   { transform: translateY(calc(var(--u) * -35)) rotate(-3deg); }
+    100% { transform: translateY(calc(var(--u) * 35)) rotate(3deg); }
+  }
+
+  /* ---------- NUBES DEL CIELO: se forman, derivan bien a la vista y se disuelven ---------- */
+  .cloudbox { filter: url(#cloudBoost); }                    /* sube la opacidad real de la nube (CLOUD_BOOST) */
+  .cloudbox img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+  .cloudlife { animation: cloudLife var(--dur) linear var(--delay) infinite; will-change: transform, opacity; }
+  @keyframes cloudLife {
+    0%   { opacity: 0; transform: translate(calc(var(--u) * var(--drift) * -.5), calc(var(--u) * 8)) scale(.9);  filter: blur(calc(var(--u) * 9)) brightness(1.2); }
+    12%  { opacity: 1; filter: blur(0) brightness(1.2); }
+    50%  { opacity: 1; transform: translate(0, calc(var(--u) * -6)) scale(1); filter: blur(0) brightness(1.28); }
+    86%  { opacity: 1; filter: blur(0) brightness(1.2); }
+    100% { opacity: 0; transform: translate(calc(var(--u) * var(--drift) * .5), calc(var(--u) * 8)) scale(1.1); filter: blur(calc(var(--u) * 11)) brightness(1.2); }
+  }
+
+  /* ---------- LUCES DEL CASTILLO: parpadeo tipo vela, cada ventana distinta ---------- */
+  .lit.winA { animation: winA var(--dur) linear var(--delay) infinite; }
+  .lit.winB { animation: winB var(--dur) linear var(--delay) infinite; }
+  .lit.winC { animation: winC var(--dur) linear var(--delay) infinite; }
+  @keyframes winA { 0%,100%{filter:brightness(1)} 7%{filter:brightness(.62)} 10%{filter:brightness(1.2)} 16%{filter:brightness(.82)} 30%{filter:brightness(1.08)} 44%{filter:brightness(.5)} 48%{filter:brightness(1.25)} 62%{filter:brightness(.92)} 78%{filter:brightness(.7)} 84%{filter:brightness(1.18)} }
+  @keyframes winB { 0%,100%{filter:brightness(1.1)} 12%{filter:brightness(.7)} 18%{filter:brightness(1.25)} 35%{filter:brightness(.9)} 52%{filter:brightness(.55)} 57%{filter:brightness(1.15)} 70%{filter:brightness(.85)} 90%{filter:brightness(1.2)} }
+  @keyframes winC { 0%,100%{filter:brightness(.95)} 9%{filter:brightness(1.22)} 22%{filter:brightness(.6)} 27%{filter:brightness(1.05)} 41%{filter:brightness(.8)} 58%{filter:brightness(1.25)} 66%{filter:brightness(.52)} 72%{filter:brightness(1.1)} 88%{filter:brightness(.78)} }
+
+  /* ---------- CALABAZAS: ojos (con parpadeo) y boca/nariz con brillo ---------- */
+  #layer-calabazas, #layer-calabazas ~ [id^="layer-cara"] { pointer-events: auto; cursor: pointer; touch-action: manipulation; }
+  .face.eyes  { animation: eyesGlow var(--dur) linear var(--delay) infinite; }
+  .face.mouth { animation: mouthGlow var(--dur) linear var(--delay) infinite; }
+  @keyframes eyesGlow {
+    0%,100% { filter: brightness(1.05) drop-shadow(0 0 calc(var(--u) * 10) rgba(255,150,40,.65)); }
+    12% { filter: brightness(1.45) drop-shadow(0 0 calc(var(--u) * 18) rgba(255,160,50,.90)); }
+    28% { filter: brightness(.85) drop-shadow(0 0 calc(var(--u) * 8) rgba(255,140,30,.50)); }
+    44% { filter: brightness(1.30) drop-shadow(0 0 calc(var(--u) * 16) rgba(255,155,45,.85)); }
+    60% { filter: brightness(.95) drop-shadow(0 0 calc(var(--u) * 9) rgba(255,145,35,.60)); }
+    74% { filter: brightness(1.50) drop-shadow(0 0 calc(var(--u) * 20) rgba(255,165,55,.95)); }
+    88% { filter: brightness(1.10) drop-shadow(0 0 calc(var(--u) * 11) rgba(255,150,40,.70)); }
+    90% { filter: brightness(.10) drop-shadow(0 0 calc(var(--u) * 0) rgba(255,150,40,0)); }  /* parpadeo */
+    92% { filter: brightness(.10) drop-shadow(0 0 calc(var(--u) * 0) rgba(255,150,40,0)); }
+    95% { filter: brightness(1.40) drop-shadow(0 0 calc(var(--u) * 18) rgba(255,160,50,.90)); }
+  }
+  @keyframes mouthGlow {
+    0%,100% { filter: brightness(1) drop-shadow(0 0 calc(var(--u) * 8) rgba(255,140,30,.55)); }
+    18% { filter: brightness(1.35) drop-shadow(0 0 calc(var(--u) * 16) rgba(255,155,40,.85)); }
+    33% { filter: brightness(.78) drop-shadow(0 0 calc(var(--u) * 6) rgba(255,135,25,.40)); }
+    55% { filter: brightness(1.25) drop-shadow(0 0 calc(var(--u) * 14) rgba(255,150,40,.80)); }
+    70% { filter: brightness(.88) drop-shadow(0 0 calc(var(--u) * 7) rgba(255,140,30,.50)); }
+  }
+
+  /* ---------- NIEBLA (MIST): Pantalla completa sin cortes ni lÃ­neas laterales ---------- */
+  #layer-mist {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    left: 0 !important;
+    top: 0 !important;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    z-index: 300;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 5%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0) 95%);
+    mask-image: linear-gradient(to top, rgba(0,0,0,1) 5%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0) 95%);
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+  @supports (height: 100dvh) {
+    #layer-mist { width: 100dvw !important; height: 100dvh !important; }
+  }
+  .mist-cloud {
+    position: absolute; bottom: -15%; height: 85vh;
+    background: radial-gradient(ellipse at center, rgba(180, 160, 220, 0.28) 0%, rgba(180, 160, 220, 0.12) 45%, rgba(180, 160, 220, 0) 75%);
+    filter: blur(calc(var(--u) * 70));
+    border-radius: 50%;
+    opacity: 0; /* Inicia oculta hasta dar clic */
+    will-change: transform, opacity;
+  }
+  #layer-mist.mist-active .mist-cloud {
+    animation: mistMove var(--dur) ease-in-out infinite alternate;
+  }
+  .mist-cloud:nth-child(1) { left: -20%; width: 70vw; --dur: 22s; }
+  .mist-cloud:nth-child(2) { left: 15%; width: 75vw; --dur: 31s; animation-delay: -7s; }
+  .mist-cloud:nth-child(3) { left: 50%; width: 70vw; --dur: 26s; animation-delay: -15s; }
+  @keyframes mistMove {
+    0% { transform: translate(-5%, 5%) scale(0.95); opacity: 0; }
+    30% { opacity: 0.45; }
+    70% { opacity: 0.45; }
+    100% { transform: translate(5%, -5%) scale(1.1); opacity: 0; }
+  }
+
+  /* ---------- RELÃMPAGO: efecto flash al dar clic ---------- */
+  .lightning-strike { opacity: 0; pointer-events: none; mix-blend-mode: screen; filter: drop-shadow(0 0 calc(var(--u) * 10) rgba(255,255,255,0.8)) brightness(1.2); }
+  .lightning-strike.active { animation: lightningFlash 0.8s ease-out forwards; }
+  @keyframes lightningFlash {
+    0% { opacity: 0; }
+    5% { opacity: 1; filter: brightness(2.5) drop-shadow(0 0 calc(var(--u) * 30) #fff); }
+    10% { opacity: 0; }
+    15% { opacity: 0; }
+    20% { opacity: 1; filter: brightness(1.8) drop-shadow(0 0 calc(var(--u) * 20) #fff); }
+    25% { opacity: 0.3; }
+    35% { opacity: 0.9; }
+    100% { opacity: 0; }
+  }
+
+  #top-trigger { position: fixed; top: 0; left: 0; width: 100vw; height: 100px; z-index: 9999; cursor: pointer; touch-action: manipulation; }
+  #bottom-trigger { position: fixed; bottom: 0; left: 0; width: 100vw; height: 100px; z-index: 9999; cursor: pointer; touch-action: manipulation; }
+
+  #xat-logo {
+    position: fixed;
+    bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) + 2.5vmin));
+    right: max(16px, calc(env(safe-area-inset-right, 0px) + 2.5vmin));
+    width: clamp(55px, 6.5vw, 90px);
+    height: auto;
+    z-index: 10000;
+    cursor: pointer; opacity: 0.65; transition: transform 0.3s ease, opacity 0.3s ease;
+    -webkit-user-drag: none; user-select: none; -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  #xat-logo:hover, #xat-logo:active {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+
+  @media (prefers-reduced-motion: reduce) { #scene *, #scene *::before { animation: none !important; } }
+
+  .panel { display: none; position: fixed; z-index: 9999; background: rgba(10,5,20,.95); color: #ddd; font: 11px/1.4 ui-monospace, Menlo, Consolas, monospace; border: 1px solid #00ffcc; border-radius: 8px; padding: 10px; max-width: 96vw; }
+  .panel h3 { color: #00ffcc; margin: 6px 0; }
+  #debug-panel { bottom: 8px; left: 8px; max-height: 50vh; overflow: auto; }
+  #debug-panel table { border-collapse: collapse; }
+  #debug-panel td img { height: 34px; background: repeating-conic-gradient(#555 0 25%, #333 0 50%) 0 0/10px 10px; }
+  #debug-panel td, #debug-panel th { border-bottom: 1px solid #333; padding: 3px 8px; text-align: left; white-space: nowrap; }
+  #debug-panel td.prov { color: #fd6; }
+  #edit-panel { top: 8px; right: 8px; width: 300px; }
+  #edit-panel select, #edit-panel button, #edit-panel textarea { width: 100%; margin-top: 6px; font: inherit; }
+  #edit-panel textarea { height: 120px; }
+</style>
+</head>
+<body>
+<div id="top-trigger"></div>
+<div id="bottom-trigger"></div>
+<a href="https://xat.com" target="_blank" rel="noopener noreferrer">
+  <img id="xat-logo" src="https://raw.githubusercontent.com/eamxat/Hallow-/b873e510d044ba9ee4ee98a6c052485f6fdcb948/logo.svg" alt="xat">
+</a>
+<svg width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><filter id="cloudBoost" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncA id="cloudBoostFn" type="linear" slope="2"/></feComponentTransfer></filter></svg>
+<audio id="pumpkinAudio" src="https://raw.githubusercontent.com/eamxat/Hallow-/main/laugh.mp3" preload="auto" playsinline webkit-playsinline></audio>
+
+<div id="scene"></div>
+
+<div id="debug-panel" class="panel">
+  <h3>Archivos de GitHub â†’ rol (reconocidos por su forma)</h3>
+  <button id="copy-assign" style="margin:0 6px 6px 0;font:inherit">Copiar asignaciÃ³n (JSON)</button><button id="reset-assign" style="margin-bottom:6px;font:inherit">Restablecer asignaciÃ³n</button>
+  <table><thead><tr><th></th><th>archivo</th><th>tamaÃ±o</th><th>contenido</th><th>rol (cÃ¡mbialo si estÃ¡ mal)</th><th>escala x / y</th><th>parecido</th></tr></thead><tbody id="files"></tbody></table>
+  <h3>Capas â€” lienzo 2870 Ã— 1425 px</h3>
+  <table><thead><tr><th>capa</th><th>x</th><th>y</th><th>ancho</th><th>alto</th><th>z</th><th>posiciÃ³n</th></tr></thead><tbody id="audit"></tbody></table>
+</div>
+
+<div id="edit-panel" class="panel">
+  <h3>Modo colocaciÃ³n (?edit=1)</h3>
+  Arrastra en la escena para mover la capa elegida (ventanas y caras siguen a su pieza madre). Flechas = 1 px de lienzo (Shift = 10).
+  <select id="edit-layer"></select>
+  <div id="edit-readout" style="margin-top:6px"></div>
+  <button id="edit-copy">Copiar posiciones (JSON)</button>
+  <textarea id="edit-json" readonly></textarea>
+  Pega el JSON en la constante POSICIONES para fijarlo.
+</div>
+
+<script>
+const CW = 2870, CH = 1425;   // lienzo maestro
+const BASE = "https://raw.githubusercontent.com/eamxat/Hallow-/refs/heads/main/";
+const ARCHIVOS = [
+  "Curva%20(3).png", "Curva%20(1).png", "Curva%20(2).png", "Curva.png",
+  "Grupo%20de%202%20objetos%20(1).png", "Grupo%20de%202%20objetos%20(2).png", "Grupo%20de%202%20objetos.png",
+  "Grupo%20de%203%20objetos%20(1).png", "Grupo%20de%203%20objetos%20(2).png", "Grupo%20de%203%20objetos%20(3).png", "Grupo%20de%203%20objetos.png",
+  "Grupo%20de%204%20objetos.png", "Grupo%20de%208%20objetos.png"
+].map(n => BASE + n);
+
+const ROLES_MANUAL = {
+  calabazas:   "Grupo de 3 objetos (3).png",   // las 3 calabazas
+  ojos:        "Grupo de 3 objetos (2).png",   // las caras/ojos de las calabazas: van ENCIMA y parpadean
+  murcielagos: "Grupo de 3 objetos.png",       // los 3 murciÃ©lagos en un solo archivo: se separan y aletean
+  nubes:       "Grupo de 4 objetos.png"         // las nubes del cielo (4): a tamaÃ±o real, aparecen y se disuelven
+};
+const IGNORAR = ["Curva (1).png", "Curva (3).png"];
+const HINTS = {};
+
+const ROLES = {
+  gradient:      { x: 622,  y: 168, z: 10,  origen: "medido" },
+  moon:          { x: 1850, y: 230, z: 20,  origen: "provisional", type: "moon" },
+  trees:         { x: 681,  y: 635, z: 60,  origen: "medido" },
+  castillo:      { x: 858,  y: 422, z: 80,  origen: "medido" },
+  calabazas:     { x: 700,  y: 930, z: 210, origen: "medido (al frente de todo, tambiÃ©n del marco)" },
+  webs:          { x: 632,  y: 159, z: 100, origen: "provisional (30 px a la izquierda)" },
+  frame:         { x: 512,  y: 109, z: 200, origen: "medido (al frente de todo)" },
+  lucescastillo: { x: 940,  y: 561, z: 70,  origen: "medido (alineado con las ventanas)", source: true }
+};
+const FP = {"gradient":{"x0":0,"y0":0,"bw":1743,"bh":1094,"nw":1743,"nh":1094,"grid":[0,0,1,13,27,70,46,38,93,70,6,0,0,15,72,100,100,100,100,100,100,100,56,1,15,90,100,100,100,100,100,100,100,100,100,53,89,100,100,100,100,100,100,100,100,100,100,65,90,100,100,100,100,100,100,100,100,100,100,53,43,100,100,100,100,100,100,100,100,100,100,79,49,100,100,100,100,100,100,100,100,100,100,89,34,100,100,100,100,100,100,100,100,100,100,78,35,100,100,100,100,100,100,100,100,100,100,82,77,100,100,100,100,100,100,100,100,100,100,93,99,95,65,87,100,100,100,100,100,100,100,74,61,8,0,14,36,22,38,56,63,32,50,10],"col":[0.56,0.37,0.53]},"moon":{"x0":0,"y0":0,"bw":128,"bh":129,"nw":128,"nh":129,"grid":[0,0,3,43,79,96,95,77,42,3,0,0,0,13,83,100,100,100,100,100,100,81,9,0,3,83,99,100,99,99,99,99,100,99,77,1,41,98,100,99,100,100,99,100,99,98,100,36,73,97,100,98,99,99,99,99,99,99,99,73,90,100,100,100,100,99,100,98,100,100,100,91,88,100,99,100,100,100,100,99,98,99,98,89,71,97,98,99,100,100,100,100,98,98,98,69,35,100,100,99,98,100,100,98,98,100,99,30,1,74,98,100,98,100,98,97,99,98,67,0,0,6,70,100,99,98,98,99,98,66,4,0,0,0,0,30,70,88,87,68,29,0,0,0],"col":[0.88,0.86,0.73]},"cloud1":{"x0":0,"y0":1,"bw":251,"bh":60,"nw":252,"nh":62,"grid":[0,0,0,0,0,14,7,0,0,0,0,0,0,0,0,1,10,17,14,0,0,0,0,0,0,0,0,9,17,17,17,0,0,0,0,0,0,0,0,13,17,17,17,5,0,0,0,0,0,0,1,16,17,17,17,16,0,0,0,0,0,0,8,17,17,17,17,17,5,1,0,0,0,7,17,17,17,17,17,17,17,9,0,0,0,12,17,17,17,17,17,17,17,15,6,0,7,17,17,17,17,17,17,17,17,17,16,5,14,16,17,17,17,17,17,17,17,17,13,10,0,3,8,17,17,17,17,15,16,4,0,0,0,0,1,15,15,8,15,2,2,0,0,0],"col":[0,0,0]},"cloud2":{"x0":0,"y0":0,"bw":131,"bh":39,"nw":132,"nh":40,"grid":[0,0,0,0,1,13,6,0,0,0,0,0,0,0,0,0,8,17,15,0,0,0,0,0,0,0,0,0,12,17,17,2,0,0,0,0,0,0,0,0,14,17,17,4,0,0,0,0,0,0,0,11,17,17,17,10,0,0,0,0,0,0,0,16,17,17,17,17,4,0,0,0,0,0,6,17,17,17,17,17,16,4,0,0,0,9,17,17,17,17,17,17,17,10,1,0,0,14,17,17,17,17,17,17,17,17,14,3,10,17,17,17,17,17,17,17,17,17,16,15,12,10,14,17,17,17,17,17,14,17,3,0,0,0,1,14,8,16,9,10,1,3,0,0],"col":[0,0,0]},"bat3":{"x0":1,"y0":0,"bw":246,"bh":102,"nw":247,"nh":103,"grid":[27,85,78,15,0,0,0,0,0,0,0,0,46,96,100,55,0,0,0,0,18,65,55,2,0,48,100,75,0,3,0,0,60,100,100,58,0,15,100,99,9,41,24,0,88,100,66,6,0,3,100,100,59,70,77,34,100,100,17,0,0,0,10,93,100,96,95,96,100,95,0,0,0,0,0,61,100,100,100,100,75,3,0,0,0,0,0,46,100,100,100,100,40,0,0,0,0,0,0,5,38,100,94,11,10,0,0,0,0,0,0,0,9,95,55,0,0,0,0,0,0,0,0,0,0,55,2,0,0,0,0,0,0,0,0,0,0,17,0,0,0,0,0,0],"col":[0.07,0.02,0.14]},"bat2":{"x0":1,"y0":0,"bw":120,"bh":55,"nw":122,"nh":55,"grid":[0,0,0,0,0,0,0,0,2,50,80,43,0,0,0,0,0,0,0,0,50,100,89,16,0,6,30,7,0,0,0,0,66,100,47,0,17,90,100,57,0,8,12,6,89,100,27,0,62,95,100,92,4,50,49,44,100,84,12,0,1,24,100,100,66,57,100,93,99,14,0,0,0,0,81,99,100,100,100,100,86,0,0,0,0,0,4,40,100,100,100,83,21,0,0,0,0,0,0,4,92,98,100,45,0,0,0,0,0,0,0,0,6,55,93,9,0,0,0,0,0,0,0,0,0,6,55,0,0,0,0,0,0,0,0,0,0,0,15,0,0,0,0,0],"col":[0.07,0.02,0.14]},"bat1":{"x0":0,"y0":0,"bw":102,"bh":42,"nw":102,"nh":43,"grid":[28,83,76,15,0,0,0,0,0,0,0,0,45,97,100,55,0,0,0,0,20,69,52,0,0,47,100,76,0,4,0,0,64,100,100,51,0,13,100,99,9,43,24,1,90,100,60,2,0,1,98,100,58,72,73,38,100,100,13,0,0,0,8,94,100,97,95,98,100,93,0,0,0,0,0,62,100,100,100,100,71,3,0,0,0,0,0,46,100,100,100,100,37,0,0,0,0,0,0,6,40,100,91,13,9,0,0,0,0,0,0,0,10,96,53,0,0,0,0,0,0,0,0,0,0,57,2,0,0,0,0,0,0,0,0,0,0,17,0,0,0,0,0,0],"col":[0.07,0.02,0.14]},"trees":{"x0":0,"y0":1,"bw":1567,"bh":542,"nw":1567,"nh":543,"grid":[2,2,0,0,0,0,0,1,5,0,0,0,9,8,0,0,0,0,2,13,20,0,0,0,15,15,0,0,0,0,6,24,29,4,0,0,15,7,0,0,0,0,0,42,35,1,4,3,16,1,0,0,0,0,0,11,44,7,8,13,21,1,0,0,0,0,0,5,73,8,14,16,12,0,0,0,0,0,0,15,61,0,7,19,2,0,0,0,0,0,0,23,63,0,3,18,0,0,0,0,0,0,0,5,79,1,2,19,0,0,0,0,0,0,0,0,74,0,0,21,0,0,0,0,0,0,0,12,94,3,0,11,0,0,0,0,0,0,0,21,69,21,0,3],"col":[0.05,0.01,0.13]},"castillo":{"x0":0,"y0":1,"bw":427,"bh":694,"nw":427,"nh":695,"grid":[0,0,0,0,0,0,0,0,49,3,0,0,0,0,0,0,0,6,39,4,82,15,0,0,0,0,0,38,70,90,57,68,61,0,0,0,0,0,44,96,91,91,45,94,50,0,0,0,0,16,31,68,71,73,26,85,12,5,51,15,0,0,0,60,96,85,69,96,4,19,83,25,0,0,46,94,83,98,100,100,58,62,71,43,1,1,47,64,80,93,99,100,70,69,79,10,21,56,27,86,98,78,76,100,57,58,93,9,0,58,91,89,98,27,28,100,31,32,60,0,15,57,60,49,98,35,22,99,40,52,35,1,74,76,93,89,98,97,98,98,98,98,72,47],"col":[0.07,0.02,0.14]},"calabazas":{"x0":0,"y0":0,"bw":1392,"bh":222,"nw":1392,"nh":222,"grid":[0,0,0,0,0,0,14,0,0,0,0,0,0,0,0,0,0,0,29,0,0,0,0,0,0,0,0,0,0,28,89,0,0,0,0,0,0,0,0,0,0,42,100,3,0,0,0,6,0,0,0,0,0,49,100,8,0,0,1,49,0,0,0,0,0,50,100,10,0,0,10,88,7,0,0,0,0,48,100,8,0,0,15,98,48,0,0,0,0,42,99,2,0,0,15,99,90,0,0,0,0,24,82,0,0,0,8,95,98,0,0,0,0,0,9,0,0,0,0,62,92,0,0,0,0,0,0,0,0,0,0,0,58,0,0,0,0,0,0,0,0,0,0,0],"col":[0.18,0.1,0.16]},"webs":{"x0":1,"y0":0,"bw":1767,"bh":365,"nw":1768,"nh":365,"grid":[0,0,0,0,0,0,0,0,0,7,1,0,0,0,0,0,0,0,0,0,0,4,8,0,0,0,0,0,0,0,0,0,0,11,14,0,0,5,0,0,0,0,0,0,0,19,15,0,0,9,0,0,0,0,0,0,0,5,29,0,0,17,3,0,0,0,0,0,0,3,27,9,0,24,0,0,0,0,0,0,0,19,26,13,5,21,0,0,0,0,0,0,0,9,21,16,10,28,0,0,0,0,0,0,0,3,26,17,13,19,0,0,0,0,0,0,0,15,27,4,16,22,0,0,0,0,0,0,0,5,3,3,10,9,0,0,0,0,0,0,0,0,0,0],"col":[0.07,0.02,0.14]},"frame":{"x0":0,"y0":0,"bw":1980,"bh":1248,"nw":1980,"nh":1248,"grid":[0,29,18,55,85,36,42,30,45,45,4,0,27,80,85,41,26,0,11,9,0,29,94,21,73,78,4,0,0,0,0,0,0,0,42,63,80,10,0,0,0,0,0,0,0,0,20,70,66,3,0,0,0,0,0,0,0,0,38,48,75,17,0,0,0,0,0,0,0,0,13,56,68,12,0,0,0,0,0,0,0,0,9,70,63,30,0,0,0,0,0,0,0,0,18,80,39,18,0,1,0,0,0,0,0,0,6,99,47,14,76,96,37,47,33,19,20,26,40,76,74,91,100,96,100,100,100,100,97,100,100,61,64,30,7,6,49,35,36,50,43,24,11,4],"col":[0.07,0.02,0.14]},"lucescastillo":{"x0":0,"y0":0,"bw":272,"bh":502,"nw":272,"nh":502,"grid":[0,0,0,0,0,30,71,39,0,0,0,0,0,0,0,0,0,14,46,18,0,0,0,0,0,9,58,16,0,58,68,59,0,0,0,0,0,0,44,17,0,59,69,52,0,0,0,0,0,0,0,0,0,12,15,10,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,22,50,46,0,0,0,0,0,20,57,32,0,15,11,0,0,0,0,0,0,5,27,9,0,0,0,0,9,30,26,0,0,36,65,58,0,0,0,0,60,71,89,19,0,68,71,74,31,51,0,0,46,73,86,29,0,72,70,50,47,53,12,0,23,66,52,22,0,64,61,26],"col":[0.58,0.29,0.06]}};
+const BATS = ["bat1", "bat2", "bat3"];
+BATS.forEach(b => delete FP[b]);
+delete FP.cloud1; delete FP.cloud2;
+FP.ojos = { x0: 26, y0: 66, bw: 1336, bh: 140 };
+
+const BAT_SLOTS = [
+  { id: "bat3", x: 1451, y: 500, w: 246, h: 102, z: 40, dur: 3.8, fly: 22, delay: -3 },
+  { id: "bat2", x: 1251, y: 330, w: 120, h: 55,  z: 41, dur: 3.2, fly: 17, delay: -7 },
+  { id: "bat1", x: 1700, y: 640, w: 102, h: 42,  z: 42, dur: 2.8, fly: 14, delay: -1 }
+];
+const CLOUD_ANCHOR = { x: 1477, y: 400 };
+const CLOUD_TIMING = [[46, -10, 380], [58, -34, 320], [52, -2, 420], [66, -45, 360]];
+const CLOUD_BOOST = 2.0;
+const ROLE_LIST = ["gradient", "moon", "trees", "castillo", "calabazas", "webs", "frame", "lucescastillo", "ojos", "murcielagos", "nubes"];
+
+const POSICIONES = {};
+
+const LOG = [];
+const params = new URLSearchParams(location.search);
+const EDIT = params.get("edit") === "1";
+const DEBUG = EDIT || params.get("debug") === "1";
+const scene = document.getElementById("scene");
+if (DEBUG) document.getElementById("debug-panel").style.display = "block";
+if (EDIT)  document.getElementById("edit-panel").style.display = "block";
+function say(msg, warn) {
+  LOG.push((warn ? "[aviso] " : "[ERROR] ") + msg); (warn ? console.warn : console.error)(msg);
+}
+
+function pixels(img) {
+  const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const g = c.getContext("2d", { willReadFrequently: true }); g.drawImage(img, 0, 0);
+  return { data: g.getImageData(0, 0, c.width, c.height).data, w: c.width, h: c.height };
+}
+
+function analyze(img) {
+  const { data, w, h } = pixels(img); let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (data[(y * w + x) * 4 + 3] > 10) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  if (x1 < 0) return null;
+  const bw = x1 - x0 + 1, bh = y1 - y0 + 1, G = 12, sum = new Float64Array(G * G), n = new Float64Array(G * G);
+  let r = 0, g = 0, b = 0, c = 0;
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    const i = (y * w + x) * 4, k = Math.min(G - 1, ((y - y0) * G / bh) | 0) * G + Math.min(G - 1, ((x - x0) * G / bw) | 0);
+    sum[k] += data[i + 3] / 255; n[k]++;
+    if (data[i + 3] > 128) { r += data[i]; g += data[i + 1]; b += data[i + 2]; c++; }
+  }
+  return { x0, y0, bw, bh, nw: w, nh: h, grid: Array.from(sum, (v, i) => Math.round(100 * v / n[i])), col: c ? [r / c / 255, g / c / 255, b / c / 255].map(v => Math.round(v * 100) / 100) : [0, 0, 0] };
+}
+
+function loadFile(url) {
+  return new Promise(res => {
+    const name = decodeURIComponent(url.split("/").pop());
+    const attempt = cors => {
+      const img = new Image(); if (cors) img.crossOrigin = "anonymous";
+      img.onload = () => res({ url, name, img, nw: img.naturalWidth, nh: img.naturalHeight, cors });
+      img.onerror = () => { if (cors) attempt(false); else { say("ERROR de carga: " + url); res(null); } };
+      img.src = url;
+    };
+    attempt(true);
+  });
+}
+
+function dist(A, R) {
+  let s = 0; for (let i = 0; i < A.grid.length; i++) { const d = (A.grid[i] - R.grid[i]) / 100; s += d * d; }
+  const dg = Math.sqrt(s / A.grid.length), da = Math.abs(Math.log((A.bw / A.bh) / (R.bw / R.bh)));
+  const dc = (Math.abs(A.col[0] - R.col[0]) + Math.abs(A.col[1] - R.col[1]) + Math.abs(A.col[2] - R.col[2])) / 3;
+  return dg + 0.5 * da + 0.3 * dc;
+}
+
+function identify(files) {
+  const map = {};
+  const take = (r, f, d) => { map[r] = f; f.role = r; f.d = d;
+    if (FP[r] && FP[r].grid && f.an) { f.sx = f.an.bw / FP[r].bw; f.sy = f.an.bh / FP[r].bh; f.scale = (f.sx + f.sy) / 2; } };
+  const MAN = Object.assign({}, ROLES_MANUAL, DEBUG ? JSON.parse(localStorage.getItem("hallow_roles") || "{}") : {});
+  for (const r in MAN) {
+    const f = files.find(x => x.name === decodeURIComponent(MAN[r].split("/").pop()));
+    if (f && f.an) { if (!map[r] && !f.role) take(r, f, FP[r] && FP[r].grid ? dist(f.an, FP[r]) : 0); } else say("AsignaciÃ³n manual: no encuentro " + MAN[r] + " para " + r, true);
+  }
+  const roles = Object.keys(FP).filter(r => FP[r].grid && !BATS.includes(r));
+  const pairs = [];
+  files.forEach(f => { if (f.role || !f.an || IGNORAR.includes(f.name)) return; (HINTS[f.name] || roles).forEach(r => { if (!map[r] && roles.includes(r)) pairs.push({ f, r, d: dist(f.an, FP[r]) }); }); });
+  pairs.sort((a, b) => a.d - b.d);
+  pairs.forEach(p => { if (!map[p.r] && !p.f.role) take(p.r, p.f, p.d); });
+  return map;
+}
+
+function dilate(m, w, h, r) {
+  const t = new Uint8Array(w * h), o = new Uint8Array(w * h);
+  const pre = new Int32Array(Math.max(w, h) + 1);
+  for (let y = 0; y < h; y++) { pre[0] = 0; for (let x = 0; x < w; x++) pre[x + 1] = pre[x] + m[y * w + x];
+    for (let x = 0; x < w; x++) t[y * w + x] = pre[Math.min(w - 1, x + r) + 1] - pre[Math.max(0, x - r)] > 0 ? 1 : 0; }
+  for (let x = 0; x < w; x++) { pre[0] = 0; for (let y = 0; y < h; y++) pre[y + 1] = pre[y] + t[y * w + x];
+    for (let y = 0; y < h; y++) o[y * w + x] = pre[Math.min(h - 1, y + r) + 1] - pre[Math.max(0, y - r)] > 0 ? 1 : 0; }
+  return o;
+}
+function label(m, w, h) {
+  const lab = new Int32Array(w * h), stack = new Int32Array(w * h), st = [null]; let n = 0;
+  for (let i = 0; i < w * h; i++) {
+    if (!m[i] || lab[i]) continue;
+    n++; let sp = 0, area = 0, sx = 0, x0 = w, x1 = 0, y0 = h, y1 = 0; stack[sp++] = i; lab[i] = n;
+    while (sp) {
+      const p = stack[--sp], x = p % w, y = (p / w) | 0; area++; sx += x;
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue; const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+        const q = ny * w + nx; if (m[q] && !lab[q]) { lab[q] = n; stack[sp++] = q; }
+      }
+    }
+    st.push({ k: n, area, cx: sx / area, bw: x1 - x0 + 1, bh: y1 - y0 + 1 });
+  }
+  return { lab, n, st };
+}
+function piece(P, lab, keep, mask) {
+  const { data, w, h } = P; let x0 = w, x1 = 0, y0 = h, y1 = 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = y * w + x; if (mask[i] && keep.has(lab[i])) { if (x < x0) x0 = x; if (x >= x1) x1 = x + 1; if (y < y0) y0 = y; if (y >= y1) y1 = y + 1; } }
+  if (x1 <= x0) return null;
+  const c = document.createElement("canvas"); c.width = x1 - x0; c.height = y1 - y0;
+  const g = c.getContext("2d"), im = g.createImageData(c.width, c.height);
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { const i = y * w + x; if (mask[i] && keep.has(lab[i])) { const o = ((y - y0) * c.width + (x - x0)) * 4; im.data[o] = data[i*4]; im.data[o+1] = data[i*4+1]; im.data[o+2] = data[i*4+2]; im.data[o+3] = data[i*4+3]; } }
+  g.putImageData(im, 0, 0);
+  return { x0, y0, w: c.width, h: c.height, src: c.toDataURL("image/png") };
+}
+function deriveWindows(file) {
+  const P = pixels(file.img), N = P.w * P.h, a = new Uint8Array(N);
+  for (let i = 0; i < N; i++) a[i] = P.data[i * 4 + 3] > 24 ? 1 : 0;
+  const kr = Math.max(1, Math.round(5 * file.scale));
+  const { lab, n } = label(dilate(a, P.w, P.h, kr), P.w, P.h);
+  const out = []; for (let k = 1; k <= n; k++) { const p = piece(P, lab, new Set([k]), a); if (p) out.push(p); }
+  return out;
+}
+function facesFromMask(P, mask, s) {
+  const { w, h } = P;
+  const { lab, st } = label(dilate(mask, w, h, Math.max(1, Math.round(s))), w, h);
+  const comps = st.filter(c => c && c.area >= 25 * s * s).sort((p, q) => p.cx - q.cx);
+  const clusters = []; comps.forEach(c => { const l = clusters[clusters.length - 1]; if (l && c.cx - l[l.length - 1].cx < 0.06 * w) l.push(c); else clusters.push([c]); });
+  const faces = clusters.map(cl => {
+    if (cl.length < 3) return { ojos: piece(P, lab, new Set(cl.map(c => c.k)), mask), boca: null };
+    const by = [...cl].sort((p, q) => q.bw * q.bh - p.bw * p.bh);
+    return { ojos: piece(P, lab, new Set([by[1].k, by[2].k]), mask), boca: piece(P, lab, new Set([by[0].k, ...by.slice(3).map(c => c.k)]), mask) };
+  });
+  return { faces, good: clusters.filter(cl => cl.length >= 3).length };
+}
+function deriveFaces(file) {
+  const P = pixels(file.img), { data, w, h } = P, N = w * h, s = file.scale || 1;
+  const sets = [[45, 100, 128, 20, 70, 60], [30, 80, 100, 12, 55, 40], [60, 120, 160, 30, 90, 80]];
+  let best = null;
+  for (const [cd, cr, ca, sd, sr, sa] of sets) {
+    const core = new Uint8Array(N), soft = new Uint8Array(N);
+    for (let i = 0; i < N; i++) { const R = data[i*4], B = data[i*4+2], A = data[i*4+3];
+      core[i] = (R - B > cd && R > cr && A > ca) ? 1 : 0; soft[i] = (R - B > sd && R > sr && A > sa) ? 1 : 0; }
+    const dc = dilate(core, w, h, Math.max(1, Math.round(2 * s))), mask = new Uint8Array(N); for (let i = 0; i < N; i++) mask[i] = soft[i] & dc[i];
+    const r = facesFromMask(P, mask, s); if (!best || r.good > best.good) best = r; if (r.good === 3) break;
+  }
+  return best.faces;
+}
+function deriveEyesFile(file, s) {
+  const P = pixels(file.img), N = P.w * P.h, a = new Uint8Array(N);
+  for (let i = 0; i < N; i++) a[i] = P.data[i * 4 + 3] > 24 ? 1 : 0;
+  return facesFromMask(P, a, s).faces;
+}
+function deriveBats(file) {
+  const P = pixels(file.img), N = P.w * P.h, a = new Uint8Array(N);
+  for (let i = 0; i < N; i++) a[i] = P.data[i * 4 + 3] > 24 ? 1 : 0;
+  const { lab, st } = label(dilate(a, P.w, P.h, 2), P.w, P.h);
+  const top = st.filter(Boolean).sort((p, q) => q.area - p.area).slice(0, 3);
+  return top.map(c => piece(P, lab, new Set([c.k]), a)).filter(Boolean).sort((p, q) => q.w - p.w);
+}
+function deriveClouds(file) {
+  const P = pixels(file.img), N = P.w * P.h, a = new Uint8Array(N);
+  for (let i = 0; i < N; i++) a[i] = P.data[i * 4 + 3] > 12 ? 1 : 0;
+  let res = null;
+  for (const r of [2, 6, 14, 28, 50]) { res = label(dilate(a, P.w, P.h, r), P.w, P.h); if (res.n <= 4) break; }
+  return res.st.filter(Boolean).sort((p, q) => q.area - p.area).slice(0, 4)
+    .map(c => piece(P, res.lab, new Set([c.k]), a)).filter(Boolean).sort((p, q) => p.x0 - q.x0);
+}
+
+const placed = {};
+const saved = EDIT ? JSON.parse(localStorage.getItem("hallow_pos5") || "{}") : {};
+
+function apply(p) {
+  const e = p.el;
+  if (p.id === "mist") return;
+  e.style.left = (p.x / CW * 100) + "%";   e.style.top = (p.y / CH * 100) + "%";
+  e.style.width = (p.w / CW * 100) + "%";  e.style.height = (p.h / CH * 100) + "%";
+  (p.children || []).forEach(c => { c.x = p.x + c.dx; c.y = p.y + c.dy; if (c.el) apply(c); });
+  if (p.id === "moon" || p.id === "gradient") updateHalo();
+}
+
+function triggerScare() {
+  const audio = document.getElementById("pumpkinAudio");
+  if (audio) {
+      audio.volume = 0.25;
+      audio.currentTime = 0;
+      audio.play().catch(e => console.warn("Audio playback failed:", e));
+  }
+  const lightning = document.getElementById("layer-lightning");
+  if (lightning) {
+      lightning.classList.remove("active");
+      void lightning.offsetWidth;
+      lightning.classList.add("active");
+  }
+  const mist = document.getElementById("layer-mist");
+  if (mist) {
+      mist.classList.add("mist-active");
+  }
+}
+
+function makeEl(L) {
+  let el;
+  if (L.type === "moon") {
+    el = document.createElement("div"); el.className = "moon";
+    const i = new Image(); i.src = L.src; i.alt = ""; i.draggable = false; el.appendChild(i);
+  } else if (L.type === "bat") {
+    el = document.createElement("div"); el.className = "bat"; el.style.setProperty("--fly", L.fly + "s");
+    const drift = document.createElement("div"); drift.className = "drift";
+    const body = document.createElement("div"); body.className = "body";
+    const im = new Image(); im.src = L.src; im.alt = ""; im.draggable = false;
+    body.appendChild(im); drift.appendChild(body); el.appendChild(drift);
+  } else if (L.type === "cloud") {
+    el = document.createElement("div"); el.className = "cloudbox";
+    const im = new Image(); im.src = L.src; im.alt = ""; im.draggable = false; im.className = "cloudlife"; el.appendChild(im);
+  } else if (L.type === "lightning") {
+    el = new Image(); el.src = L.src; el.alt = ""; el.draggable = false; el.className = L.cls;
+  } else if (L.type === "mist") {
+    el = document.createElement("div");
+    for (let i = 0; i < 3; i++) { const c = document.createElement("div"); c.className = "mist-cloud"; el.appendChild(c); }
+  } else if (L.type === "ghost") {
+    el = document.createElement("div");
+  } else {
+    el = new Image(); el.src = L.src; el.alt = ""; el.draggable = false; if (L.cls) el.className = L.cls;
+  }
+  el.id = "layer-" + L.id; el.style.zIndex = L.z;
+  if (L.dur != null) el.style.setProperty("--dur", L.dur + "s");
+  if (L.delay != null) el.style.setProperty("--delay", L.delay + "s");
+  if (L.drift != null) el.style.setProperty("--drift", L.drift);
+  
+  if (L.id === "calabazas" || L.id.startsWith("cara")) {
+    el.addEventListener("click", triggerScare);
+    el.addEventListener("touchend", e => { e.preventDefault(); triggerScare(); }, { passive: false });
+  }
+  
+  return el;
+}
+
+function updateHalo() {
+  const h = document.getElementById("moonhalo"), g = placed.gradient, m = placed.moon; if (!h || !g || !m) return;
+  h.style.left = (g.x / CW * 100) + "%"; h.style.top = (g.y / CH * 100) + "%"; h.style.width = (g.w / CW * 100) + "%"; h.style.height = (g.h / CH * 100) + "%";
+  h.style.setProperty("--cx", ((m.x + m.w / 2 - g.x) / g.w * 100) + "%"); h.style.setProperty("--cy", ((m.y + m.h / 2 - g.y) / g.h * 100) + "%");
+}
+function makeHalo(files) {
+  const g = files && files.find(f => f.role === "gradient"); if (!g || !placed.gradient || !placed.moon) return;
+  const h = document.createElement("div"); h.id = "moonhalo"; h.className = "moonhalo"; h.style.zIndex = 15;
+  try {
+    const k = 3, c = document.createElement("canvas"); c.width = Math.round(g.nw / k); c.height = Math.round(g.nh / k);
+    c.getContext("2d").drawImage(g.img, 0, 0, c.width, c.height);
+    const u = 'url("' + c.toDataURL("image/png") + '")'; h.style.webkitMaskImage = u; h.style.maskImage = u;
+  } catch (e) {}
+  const i = document.createElement("i"); h.appendChild(i); scene.appendChild(h); updateHalo();
+}
+
+function build(layers) {
+  layers.forEach(L => {
+    const p = { ...L };
+    if (!L.parent) {
+      if (POSICIONES[L.id]) { p.x = POSICIONES[L.id].x; p.y = POSICIONES[L.id].y; p.origen = "POSICIONES"; }
+      if (EDIT && saved[L.id]) { p.x = saved[L.id].x; p.y = saved[L.id].y; p.origen = "localStorage (edit)"; }
+    }
+    placed[L.id] = p;
+  });
+  layers.forEach(L => { const p = placed[L.id], m = L.parent && placed[L.parent];
+    if (m) { p.x = m.x + L.dx; p.y = m.y + L.dy; (m.children = m.children || []).push(p); } else p.parent = null; });
+  const audit = document.getElementById("audit");
+  [...layers].sort((a, b) => a.z - b.z).forEach(L => {
+    const p = placed[L.id]; p.el = makeEl(L); apply(p);
+    if (L.id === "mist") {
+      document.body.appendChild(p.el);
+    } else {
+      scene.appendChild(p.el);
+    }
+    const tr = document.createElement("tr");
+    [L.id, Math.round(p.x), Math.round(p.y), Math.round(L.w), Math.round(L.h), L.z, p.origen].forEach((t, i) => { const td = document.createElement("td"); td.textContent = t; if (i === 6 && /provisional/.test(p.origen)) td.className = "prov"; tr.appendChild(td); });
+    audit.appendChild(tr);
+  });
+}
+
+async function main() {
+  document.getElementById("cloudBoostFn").setAttribute("slope", CLOUD_BOOST);
+  const loaded = (await Promise.all(ARCHIVOS.map(loadFile))).filter(Boolean);
+  loaded.forEach(f => { try { f.an = analyze(f.img); } catch (e) { f.an = null; } });
+  if (loaded.some(f => !f.an)) say("No se pueden leer los pÃ­xeles de algÃºn archivo (CORS o imagen vacÃ­a): no se puede reconocer por contenido.");
+  const map = identify(loaded);
+
+  const rep = ["ARCHIVO | tamaÃ±o | contenido visible | rol | escala x / y | parecido (0=idÃ©ntico)"];
+  const ft = document.getElementById("files");
+  loaded.forEach(f => { const tr = document.createElement("tr");
+    const row = [f.name, f.nw + "Ã—" + f.nh, f.an ? f.an.bw + "Ã—" + f.an.bh : "â€”", f.role || (IGNORAR.includes(f.name) ? "â€” ignorado â€”" : "â€” sin reconocer â€”"), f.sx ? f.sx.toFixed(3) + " / " + f.sy.toFixed(3) : "â€”", f.d != null ? f.d.toFixed(3) : "â€”"];
+    rep.push(row.join(" | "));
+    const t0 = document.createElement("td"), im = new Image(); im.src = f.url; t0.appendChild(im); tr.appendChild(t0);
+    row.forEach((t, i) => { const td = document.createElement("td");
+      if (i === 3) { const sel = document.createElement("select"); ["", ...ROLE_LIST].forEach(r => { const o = document.createElement("option"); o.value = r; o.textContent = r || "â€” ninguno â€”"; if (r === (f.role || "")) o.selected = true; sel.appendChild(o); });
+        sel.onchange = () => { const cur = {}; loaded.forEach(g => { if (g.role) cur[g.role] = g.name; }); if (f.role) delete cur[f.role]; if (sel.value) cur[sel.value] = f.name; localStorage.setItem("hallow_roles", JSON.stringify(cur)); location.reload(); };
+        td.appendChild(sel); } else td.textContent = t; tr.appendChild(td); });
+    ft.appendChild(tr); });
+  document.getElementById("copy-assign").onclick = () => { const cur = {}; loaded.forEach(g => { if (g.role) cur[g.role] = g.name; }); const t = "const ROLES_MANUAL = " + JSON.stringify(cur, null, 1) + ";"; navigator.clipboard && navigator.clipboard.writeText(t); };
+  document.getElementById("reset-assign").onclick = () => { localStorage.removeItem("hallow_roles"); location.reload(); };
+
+  const place = r => { const f = map[r], R = ROLES[r], O = FP[r];
+    return { x: R.x + O.x0 - f.an.x0 / f.sx, y: R.y + O.y0 - f.an.y0 / f.sy, w: f.nw / f.sx, h: f.nh / f.sy, sx: f.sx, sy: f.sy }; };
+
+  const layers = [];
+  for (const r in ROLES) {
+    const R = ROLES[r]; if (!map[r] || !map[r].sx || R.source) continue; const q = place(r);
+    layers.push({ id: r, x: q.x, y: q.y, w: q.w, h: q.h, z: R.z, origen: R.origen, src: map[r].url, type: R.type, cls: R.cls, dur: R.dur, fly: R.fly, delay: R.delay });
+  }
+
+  // --- MurciÃ©lagos con SVG aportado ---
+  if (map.murcielagos) {
+    try {
+      const bats = deriveBats(map.murcielagos);
+      bats.forEach((p, i) => { const S = BAT_SLOTS[i]; if (!S) return;
+        const svgSrc = "https://raw.githubusercontent.com/eamxat/Hallow-/1561780b447577995706e08e66cd5cb2b6817029/bat.svg";
+        layers.push({ id: S.id, x: S.x, y: S.y, w: S.w, h: S.h, z: S.z, origen: "SVG aportado", src: svgSrc, type: "bat", dur: S.dur, fly: S.fly, delay: S.delay }); });
+    } catch (e) {}
+  }
+
+  // --- Nubes ---
+  if (map.nubes && map.nubes.an) {
+    const refs = Object.values(map).filter(f => f.sx);
+    const med = a => { const v = [...a].sort((x, y) => x - y); return v.length ? v[v.length >> 1] : 1; };
+    const sxR = med(refs.map(f => f.sx)), syR = med(refs.map(f => f.sy)), f = map.nubes, an = f.an;
+    const bw = an.bw / sxR, bh = an.bh / syR;
+    const X = CLOUD_ANCHOR.x - bw / 2 - an.x0 / sxR, Y = CLOUD_ANCHOR.y - bh / 2 - an.y0 / syR;
+    layers.push({ id: "nubes", x: X, y: Y, w: f.nw / sxR, h: f.nh / syR, z: 0, origen: "provisional (grupo de nubes, tamaÃ±o real)", type: "ghost" });
+    try {
+      const cl = deriveClouds(f);
+      cl.forEach((p, i) => { const T = CLOUD_TIMING[i % CLOUD_TIMING.length], x = X + p.x0 / sxR, y = Y + p.y0 / syR;
+        layers.push({ id: "nube" + (i + 1), x, y, w: p.w / sxR, h: p.h / syR, z: 30, origen: "derivado del grupo de nubes", src: p.src, type: "cloud", dur: T[0], delay: T[1], drift: T[2], parent: "nubes", dx: x - X, dy: y - Y }); });
+    } catch (e) {
+      layers.push({ id: "nubes_img", x: X, y: Y, w: f.nw / sxR, h: f.nh / syR, z: 30, origen: "grupo de nubes", src: f.url, type: "cloud", dur: 52, delay: -20, drift: 380, parent: "nubes", dx: 0, dy: 0 });
+    }
+  }
+
+  const flick = [["winA", 3.1, -0.4], ["winB", 4.3, -1.9], ["winC", 2.6, -1.1], ["winA", 5.2, -3.3], ["winB", 3.7, -0.2], ["winC", 4.8, -2.5], ["winA", 2.9, -1.7], ["winB", 3.4, -2.2], ["winC", 4.1, -0.9]];
+  const timing = [[6.4, -1.0, 3.3], [7.6, -4.2, 4.1], [8.7, -2.6, 3.7]];
+  const Cq = map.castillo && map.castillo.sx && place("castillo");
+
+  if (map.lucescastillo && map.lucescastillo.sx) {
+    const f = map.lucescastillo, q = place("lucescastillo"), Lc = ROLES.lucescastillo;
+    try {
+      const wins = deriveWindows(f);
+      wins.forEach((p, i) => {
+        const t = flick[i % flick.length], x = q.x + p.x0 / q.sx, y = q.y + p.y0 / q.sy;
+        layers.push({ id: "ventana" + (i + 1), x, y, w: p.w / q.sx, h: p.h / q.sy, z: Lc.z, origen: "derivado de las luces del castillo", src: p.src, cls: "lit " + t[0], dur: t[1], delay: t[2], parent: Cq ? "castillo" : null, dx: Cq ? x - Cq.x : 0, dy: Cq ? y - Cq.y : 0 });
+      });
+    } catch (e) {
+      layers.push({ id: "lucescastillo", x: q.x, y: q.y, w: q.w, h: q.h, z: Lc.z, origen: Lc.origen, src: f.url, cls: "lit winA", dur: 3.1, delay: -0.4, parent: Cq ? "castillo" : null, dx: Cq ? q.x - Cq.x : 0, dy: Cq ? q.y - Cq.y : 0 });
+    }
+  }
+
+  // --- Ojos/caras de las calabazas ---
+  const pushFaces = (faces, X, Y, sxE, syE, q) => faces.forEach((c, i) => { if (!c) return; const t = timing[i % 3];
+    [["ojos", "eyes", t[0]], ["boca", "mouth", t[2]]].forEach(([k, cls, d]) => { const p = c[k]; if (!p) return;
+      const x = X + p.x0 / sxE, y = Y + p.y0 / syE;
+      layers.push({ id: "cara" + (i + 1) + "_" + k, x, y, w: p.w / sxE, h: p.h / syE, z: 215, origen: "derivado del archivo de ojos", src: p.src, cls: "face " + cls, dur: d, delay: t[1], parent: "calabazas", dx: x - q.x, dy: y - q.y }); }); });
+  if (map.calabazas && map.calabazas.sx) {
+    const q = place("calabazas");
+    if (map.ojos && map.ojos.an) {
+      const fe = map.ojos; let sxE = q.sx, syE = q.sy;
+      const wChk = fe.an.bw / sxE / FP.ojos.bw;
+      if (Math.abs(wChk - 1) > 0.04) { sxE = fe.an.bw / FP.ojos.bw; syE = q.sy / q.sx * sxE; }
+      const X = ROLES.calabazas.x + FP.ojos.x0 - fe.an.x0 / sxE, Y = ROLES.calabazas.y + FP.ojos.y0 - fe.an.y0 / syE;
+      try {
+        const faces = deriveEyesFile(fe, sxE);
+        pushFaces(faces, X, Y, sxE, syE, q);
+      } catch (e) {
+        layers.push({ id: "ojos", x: X, y: Y, w: fe.nw / sxE, h: fe.nh / syE, z: 215, origen: "archivo de ojos", src: fe.url, cls: "face eyes", dur: 6.4, delay: -1, parent: "calabazas", dx: X - q.x, dy: Y - q.y });
+      }
+    } else {
+      try {
+        const faces = deriveFaces(map.calabazas);
+        pushFaces(faces, q.x, q.y, q.sx, q.sy, q);
+      } catch (e) {}
+    }
+  }
+
+  // --- RELÃMPAGO: escalado 1.7x desde su centro en la altura de la lÃ­nea roja (y: 285) ---
+  const lgtUrl = "https://raw.githubusercontent.com/eamxat/Hallow-/refs/heads/main/lighthing.png";
+  const lgtFile = await loadFile(lgtUrl);
+  if (lgtFile) {
+    const scaleFactor = 1.7;
+    const lgtW = lgtFile.nw * scaleFactor;
+    const lgtH = lgtFile.nh * scaleFactor;
+    const lgtX = 1050 - (lgtFile.nw * (scaleFactor - 1)) / 2;
+    layers.push({ id: "lightning", x: lgtX, y: 285, w: lgtW, h: lgtH, z: 75, origen: "efecto relÃ¡mpago alineado a lÃ­nea roja", src: lgtUrl, type: "lightning", cls: "lightning-strike" });
+  }
+
+  // --- NIEBLA: Capa en pantalla completa ---
+  layers.push({ id: "mist", x: 0, y: 0, w: CW, h: CH, z: 300, origen: "generado por CSS full-screen", type: "mist" });
+
+  build(layers);
+  makeHalo(loaded);
+  if (EDIT) setupEdit();
+}
+
+function setupEdit() {
+  const sel = document.getElementById("edit-layer"), out = document.getElementById("edit-json"), ro = document.getElementById("edit-readout");
+  Object.keys(placed).filter(id => !placed[id].parent).forEach(id => { const o = document.createElement("option"); o.value = id; o.textContent = id; sel.appendChild(o); });
+  const refresh = () => {
+    Object.values(placed).forEach(q => q.el.style.outline = "");
+    const p = placed[sel.value];
+    if (p) { ro.textContent = "x " + Math.round(p.x) + "  y " + Math.round(p.y); p.el.style.outline = "2px dashed #00ffcc"; }
+    const o = {}; for (const id in placed) if (!placed[id].parent) o[id] = { x: Math.round(placed[id].x), y: Math.round(placed[id].y) };
+    out.value = JSON.stringify(o, null, 1);
+    localStorage.setItem("hallow_pos5", JSON.stringify(o));
+  };
+  const move = (dx, dy) => { const p = placed[sel.value]; if (!p) return; p.x += dx; p.y += dy; apply(p); refresh(); };
+  sel.onchange = refresh;
+  let last = null;
+  scene.addEventListener("pointerdown", e => { last = e; scene.setPointerCapture(e.pointerId); });
+  scene.addEventListener("pointermove", e => { if (!last) return; const r = scene.getBoundingClientRect(); move((e.clientX - last.clientX) / r.width * CW, (e.clientY - last.clientY) / r.height * CH); last = e; });
+  scene.addEventListener("pointerup", () => last = null);
+  window.addEventListener("keydown", e => { const s = e.shiftKey ? 10 : 1; const d = { ArrowLeft: [-s, 0], ArrowRight: [s, 0], ArrowUp: [0, -s], ArrowDown: [0, s] }[e.key]; if (d) { e.preventDefault(); move(d[0], d[1]); } });
+  document.getElementById("edit-copy").onclick = () => { out.select(); navigator.clipboard && navigator.clipboard.writeText(out.value); };
+  refresh();
+}
+
+const topTrig = document.getElementById("top-trigger");
+topTrig.addEventListener("click", triggerScare);
+topTrig.addEventListener("touchend", e => { e.preventDefault(); triggerScare(); }, { passive: false });
+
+const botTrig = document.getElementById("bottom-trigger");
+botTrig.addEventListener("click", triggerScare);
+botTrig.addEventListener("touchend", e => { e.preventDefault(); triggerScare(); }, { passive: false });
+
+// --- BLOQUEO DE CONSOLA, CLIC DERECHO Y ATAJOS DE INSPECCIÃ“N (F12, Ctrl+U, etc.) ---
+document.addEventListener("contextmenu", e => e.preventDefault());
+document.addEventListener("dragstart", e => e.preventDefault());
+document.addEventListener("keydown", e => {
+  const k = (e.key || "").toUpperCase();
+  if (
+    e.key === "F12" || e.keyCode === 123 ||
+    ((e.ctrlKey || e.metaKey) && e.shiftKey && ["I", "J", "C", "K"].includes(k)) ||
+    ((e.ctrlKey || e.metaKey) && e.altKey && ["I", "J", "C", "U"].includes(k)) ||
+    ((e.ctrlKey || e.metaKey) && ["U", "S", "P"].includes(k))
+  ) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }
+}, true);
+setInterval(() => {
+  try { console.clear(); } catch (e) {}
+}, 1000);
+
+main();
+</script>
+</body>
+</html>
